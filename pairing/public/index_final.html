@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MOMO-XMD PAIRING</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0b0e11;
+            color: #e9edef;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #111b21;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+        }
+        h1 {
+            color: #00a884;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+        .tabs {
+            display: flex;
+            background-color: #202c33;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+        .tab {
+            flex: 1;
+            padding: 12px;
+            cursor: pointer;
+            transition: 0.3s;
+            color: #8696a0;
+            font-weight: 600;
+        }
+        .tab.active {
+            background-color: #00a884;
+            color: white;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #8696a0;
+        }
+        input {
+            width: 100%;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #2a3942;
+            background-color: #2a3942;
+            color: white;
+            box-sizing: border-box;
+            font-size: 16px;
+            outline: none;
+        }
+        input:focus {
+            border-color: #00a884;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            border-radius: 8px;
+            border: none;
+            background-color: #00a884;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        button:hover {
+            background-color: #06cf9c;
+        }
+        button:disabled {
+            background-color: #2a3942;
+            color: #667781;
+            cursor: not-allowed;
+        }
+        #result {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #202c33;
+            border-radius: 8px;
+            display: none;
+        }
+        #pairing-code {
+            font-size: 32px;
+            font-weight: bold;
+            color: #00a884;
+            letter-spacing: 6px;
+            margin: 15px 0;
+            cursor: pointer;
+        }
+        #qr-image {
+            width: 250px;
+            height: 250px;
+            background-color: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 0 auto;
+        }
+        .loader {
+            border: 4px solid #202c33;
+            border-top: 4px solid #00a884;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            display: none;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .footer {
+            margin-top: 30px;
+            font-size: 13px;
+            color: #667781;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>MOMO-XMD</h1>
+        
+        <div class="tabs">
+            <div class="tab active" id="tab-pairing" onclick="setMode('pairing')">Pairing Code</div>
+            <div class="tab" id="tab-qr" onclick="setMode('qr')">QR Code</div>
+        </div>
+
+        <div id="pairing-section">
+            <div class="form-group">
+                <label>Enter WhatsApp Number</label>
+                <input type="text" id="number" placeholder="e.g. 255760298574">
+            </div>
+            <button id="btn-submit" onclick="submit()">Get Pairing Code</button>
+        </div>
+
+        <div id="qr-section" style="display: none;">
+            <p style="color: #8696a0; margin-bottom: 20px;">Click the button below to generate a QR code for scanning.</p>
+            <button id="btn-qr" onclick="getQR()">Get QR Code</button>
+        </div>
+
+        <div class="loader" id="loader"></div>
+
+        <div id="result">
+            <div id="pairing-display" style="display: none;">
+                <p style="color: #8696a0;">Your Code:</p>
+                <div id="pairing-code" onclick="copyCode()"></div>
+                <p style="font-size: 13px; color: #00a884;">Link this code in your WhatsApp settings</p>
+            </div>
+            <div id="qr-display" style="display: none;">
+                <img id="qr-image" src="" alt="Scan Me">
+                <p style="margin-top: 15px; font-size: 13px; color: #8696a0;">Scan this QR with your WhatsApp</p>
+            </div>
+        </div>
+
+        <div class="footer">
+            Built by MOMO47 &copy; 2026
+        </div>
+    </div>
+
+    <script>
+        let mode = 'pairing';
+
+        function setMode(m) {
+            mode = m;
+            document.getElementById('tab-pairing').classList.toggle('active', m === 'pairing');
+            document.getElementById('tab-qr').classList.toggle('active', m === 'qr');
+            document.getElementById('pairing-section').style.display = m === 'pairing' ? 'block' : 'none';
+            document.getElementById('qr-section').style.display = m === 'qr' ? 'block' : 'none';
+            document.getElementById('result').style.display = 'none';
+        }
+
+        async function submit() {
+            const num = document.getElementById('number').value;
+            if (!num) return alert('Please enter your number!');
+            
+            toggleLoading(true);
+            try {
+                const res = await fetch('/pair', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ number: num })
+                });
+                const data = await res.json();
+                if (data.code) {
+                    document.getElementById('pairing-code').innerText = data.code;
+                    document.getElementById('pairing-display').style.display = 'block';
+                    document.getElementById('qr-display').style.display = 'none';
+                    document.getElementById('result').style.display = 'block';
+                } else {
+                    alert(data.error || 'Failed to get code.');
+                }
+            } catch (e) { alert('Server Error'); }
+            finally { toggleLoading(false); }
+        }
+
+        async function getQR() {
+            toggleLoading(true);
+            try {
+                const res = await fetch('/qr');
+                const data = await res.json();
+                if (data.qr) {
+                    document.getElementById('qr-image').src = data.qr;
+                    document.getElementById('qr-display').style.display = 'block';
+                    document.getElementById('pairing-display').style.display = 'none';
+                    document.getElementById('result').style.display = 'block';
+                } else {
+                    alert(data.error || 'Failed to get QR.');
+                }
+            } catch (e) { alert('Server Error'); }
+            finally { toggleLoading(false); }
+        }
+
+        function toggleLoading(on) {
+            document.getElementById('loader').style.display = on ? 'block' : 'none';
+            document.getElementById('btn-submit').disabled = on;
+            document.getElementById('btn-qr').disabled = on;
+            if (on) document.getElementById('result').style.display = 'none';
+        }
+
+        function copyCode() {
+            const code = document.getElementById('pairing-code').innerText;
+            navigator.clipboard.writeText(code);
+            alert('Code Copied!');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+{
+  "name": "MOMO-XMD Pairing Server",
+  "description": "MOMO-XMD WhatsApp Pairing Server - Generate pairing codes and session IDs",
+  "repository": "https://github.com/MOMO47-tech/MOMO-XMD",
+  "logo": "https://raw.githubusercontent.com/MOMO47-tech/MOMO-XMD/main/media/momo.jpg",
+  "keywords": ["whatsapp", "bot", "momo-xmd", "baileys", "pairing"],
+  "success_url": "/",
+  "env": {
+    "NODE_ENV": {
+      "description": "Environment",
+      "required": false,
+      "value": "production"
+    },
+    "PORT": {
+      "description": "Server port",
+      "required": false,
+      "value": "8000"
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "addons": [],
+  "buildpacks": [
+    {
+      "url": "https://github.com/heroku/heroku-buildpack-nodejs"
+    }
+  ]
+}
