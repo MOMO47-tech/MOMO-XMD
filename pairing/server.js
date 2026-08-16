@@ -173,6 +173,26 @@ app.get('/session-registry/:sessionId', (req, res) => {
     res.json({ sessionId: token, fullNumber: entry.fullNumber, files: entry.files });
 });
 
+app.post('/session-registry/:sessionId', express.json({ limit: '10mb' }), (req, res) => {
+    try {
+        const token = String(req.params.sessionId || '');
+        if (!new RegExp(`^${SESSION_PREFIX}[HV][A-Z0-9]{22}$`).test(token)) {
+            return res.status(400).json({ error: 'Invalid Session ID format' });
+        }
+        const files = req.body?.files;
+        if (!files || typeof files !== 'object') {
+            return res.status(400).json({ error: 'No files provided' });
+        }
+        const registry = readSessionRegistry();
+        const existing = registry[token] || { fullNumber: 'owner', createdAt: Date.now() };
+        registry[token] = { ...existing, files, updatedAt: Date.now() };
+        writeSessionRegistry(registry);
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 app.post('/pair', async (req, res) => {
     const number = cleanNumber(req.body?.number);
     if (!/^\d{8,15}$/.test(number)) {
