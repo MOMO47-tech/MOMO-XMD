@@ -34,20 +34,42 @@ if (!fs.existsSync(STATS_FILE)) {
 }
 
 function getStats() {
-    // The registry contains only Session IDs created after a completed pairing.
-    // Counting it avoids displaying a fabricated or stale user total.
     try {
-        return { totalPairings: Object.keys(readSessionRegistry()).length };
-    } catch {
+        let count = 0;
+        if (fs.existsSync(SESSION_REGISTRY_FILE)) {
+            const registry = JSON.parse(fs.readFileSync(SESSION_REGISTRY_FILE, 'utf8'));
+            count = Object.keys(registry).length;
+        }
+        
+        let persistentCount = 0;
+        if (fs.existsSync(STATS_FILE)) {
+            const stats = JSON.parse(fs.readFileSync(STATS_FILE, 'utf8'));
+            persistentCount = Number(stats.totalPairings || 0);
+        }
+        
+        // Return whichever is higher to ensure it never goes down
+        return { totalPairings: Math.max(count, persistentCount) };
+    } catch (e) {
         return { totalPairings: 0 };
     }
 }
 
 function incrementStats() {
-    const stats = getStats();
-    stats.totalPairings = Number(stats.totalPairings || 0) + 1;
-    fs.writeFileSync(STATS_FILE, JSON.stringify(stats));
-    return stats.totalPairings;
+    try {
+        let stats = { totalPairings: 0 };
+        if (fs.existsSync(STATS_FILE)) {
+            stats = JSON.parse(fs.readFileSync(STATS_FILE, 'utf8'));
+        }
+        
+        const registry = readSessionRegistry();
+        const registryCount = Object.keys(registry).length;
+        
+        stats.totalPairings = Math.max(registryCount, Number(stats.totalPairings || 0) + 1);
+        fs.writeFileSync(STATS_FILE, JSON.stringify(stats));
+        return stats.totalPairings;
+    } catch (e) {
+        return 0;
+    }
 }
 
 function readSessionRegistry() {
@@ -333,7 +355,7 @@ https://whatsapp.com/channel/0029VbDYZ7LBVJky0TggGF2N`
                 }
             }
             if (inboxDelivered) {
-                const totalPairings = Object.keys(readSessionRegistry()).length;
+                const totalPairings = incrementStats();
                 logger.info({ sessionKey, totalPairings }, 'Completed pairing is included in the truthful server user counter');
             }
             if (!inboxDelivered) {
