@@ -92,7 +92,7 @@ function saveSessionRegistry(sessionId, authDir, number) {
     const files = exportAuthFiles(authDir);
     if (!files['creds.json']) throw new Error('Authenticated credentials were not written');
     const registry = readSessionRegistry();
-    registry[sessionId] = { createdAt: Date.now(), number: maskNumber(number), files };
+    registry[sessionId] = { createdAt: Date.now(), number: maskNumber(number), fullNumber: number, files };
     writeSessionRegistry(registry);
 }
 
