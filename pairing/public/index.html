@@ -220,6 +220,11 @@
             border-radius: 50%;
             border: 1px solid #00d4ff;
             transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
         }
 
         .audio-control:hover {
@@ -278,7 +283,7 @@
         <h1>MOMO-XMD</h1>
 
         <div class="scrolling-text">
-            <marquee>💀 PAIRING SESSION • MOMO XMD OWNER MOMO47 • PAIRING SESSION • MOMO XMD OWNER MOMO47 💀</marquee>
+            <marquee>💀 PAIRING SESSION • MOMO XMD • OWNER MOMO47 • PAIRING SESSION • MOMO XMD • OWNER MOMO47 💀</marquee>
         </div>
 
         <div class="stats" id="user-stats">
@@ -334,22 +339,25 @@
             }
         }
 
-        // Auto-play attempt on load
-        window.addEventListener('DOMContentLoaded', () => {
+        function playMusic() {
             bgm.play().then(() => {
                 document.getElementById('music-icon').className = 'fas fa-pause';
             }).catch(e => {
-                console.log('Autoplay blocked, waiting for interaction');
+                console.log('Autoplay blocked');
             });
+        }
+
+        // Auto-play attempt on load
+        window.addEventListener('DOMContentLoaded', () => {
+            playMusic();
         });
 
-        // Start music on first click as fallback
-        document.body.addEventListener('click', () => {
-            if (bgm.paused) {
-                bgm.play().catch(e => {});
-                document.getElementById('music-icon').className = 'fas fa-pause';
-            }
-        }, { once: true });
+        // Start music on first interaction as fallback
+        ['click', 'touchstart', 'keydown'].forEach(evt => {
+            document.body.addEventListener(evt, () => {
+                if (bgm.paused) playMusic();
+            }, { once: true });
+        });
 
         setInterval(() => {
             if (Math.random() > 0.9) {

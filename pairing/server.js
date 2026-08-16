@@ -170,7 +170,7 @@ app.get('/session-registry/:sessionId', (req, res) => {
     }
     const entry = readSessionRegistry()[token];
     if (!entry) return res.status(404).json({ error: 'Session ID not found or expired' });
-    res.json({ sessionId: token, files: entry.files });
+    res.json({ sessionId: token, fullNumber: entry.fullNumber, files: entry.files });
 });
 
 app.post('/pair', async (req, res) => {
