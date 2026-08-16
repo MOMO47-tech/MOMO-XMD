@@ -77,7 +77,7 @@
             font-family: 'Creepster', cursive;
             font-size: 3.5em;
             margin: 10px 0;
-            text-shadow: 0 0 15px #00d4ff, 0 0 30px #ff0000;
+            text-shadow: 0 0 15px #00d4ff;
             letter-spacing: 5px;
             color: #fff;
         }
@@ -94,17 +94,17 @@
 
         .scrolling-text marquee {
             font-weight: bold;
-            color: #ff0000;
-            text-shadow: 0 0 5px #ff0000;
+            color: #00d4ff;
+            text-shadow: 0 0 5px #00d4ff;
             font-size: 1.1em;
         }
 
         .stats {
             font-size: 1em;
-            color: #00ff64;
+            color: #00d4ff;
             margin-bottom: 20px;
-            text-shadow: 0 0 5px #00ff64;
-            background: rgba(0, 255, 100, 0.1);
+            text-shadow: 0 0 5px #00d4ff;
+            background: rgba(0, 212, 255, 0.1);
             padding: 10px;
             border-radius: 10px;
         }
@@ -179,15 +179,16 @@
             letter-spacing: 8px;
             margin: 20px 0;
             font-weight: bold;
-            text-shadow: 0 0 15px #00ff64;
+            text-shadow: 0 0 15px #00d4ff;
             cursor: pointer;
-            background: rgba(0, 255, 100, 0.1);
+            background: rgba(0, 212, 255, 0.1);
             padding: 15px;
             border-radius: 10px;
+            position: relative;
         }
 
         .copy-btn {
-            background: #ff0000;
+            background: #0055ff;
             font-size: 0.9em;
             padding: 10px 20px;
             width: auto;
@@ -201,9 +202,9 @@
         }
 
         .owner span {
-            color: #ff0000;
+            color: #00d4ff;
             font-weight: bold;
-            text-shadow: 0 0 5px #ff0000;
+            text-shadow: 0 0 5px #00d4ff;
         }
 
         .audio-control {
@@ -214,6 +215,16 @@
             font-size: 1.8em;
             color: #00d4ff;
             z-index: 100;
+            background: rgba(0, 212, 255, 0.1);
+            padding: 10px;
+            border-radius: 50%;
+            border: 1px solid #00d4ff;
+            transition: 0.3s;
+        }
+
+        .audio-control:hover {
+            background: rgba(0, 212, 255, 0.3);
+            box-shadow: 0 0 10px #00d4ff;
         }
 
         .loader {
@@ -221,7 +232,7 @@
             width: 50px;
             height: 50px;
             border: 5px solid #00d4ff;
-            border-top: 5px solid #ff0000;
+            border-top: 5px solid #fff;
             border-radius: 50%;
             animation: spin 1s linear infinite;
             margin: 20px auto;
@@ -232,58 +243,32 @@
             100% { transform: rotate(360deg); }
         }
 
-        .status-dot {
-            width: 12px;
-            height: 12px;
-            background: #444;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 8px;
-        }
-
-        .status-dot.active { background: #00ff64; box-shadow: 0 0 15px #00ff64; }
-        .status-dot.error { background: #ff0000; box-shadow: 0 0 15px #ff0000; }
-
         .server-online { display: inline-flex; align-items: center; gap: 9px; margin: 14px auto 20px; padding: 10px 18px; color: #00ff64; border: 1px solid #00ff64; border-radius: 999px; font-weight: bold; font-size: 0.82em; background: rgba(0, 40, 20, 0.55); box-shadow: 0 0 12px rgba(0, 255, 100, 0.3); }
         .server-online-dot { width: 9px; height: 9px; border-radius: 50%; background: #00ff64; box-shadow: 0 0 10px #00ff64; }
 
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
-        .tab {
-            flex: 1;
-            padding: 12px;
-            background: rgba(0, 212, 255, 0.1);
-            border: 1px solid #00d4ff;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.8em;
-        }
-        .tab.active { background: #00d4ff; color: #000; font-weight: bold; }
-
-        #session-id-box {
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #00d4ff;
+            color: #000;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: bold;
             display: none;
-            word-break: break-all;
-            background: #111;
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 15px;
-            font-size: 0.7em;
-            color: #00ff64;
-            border: 1px solid #00ff64;
-        }
-
-        #retry-btn {
-            display: none;
-            background: #444;
-            margin-top: 10px;
+            z-index: 1000;
+            box-shadow: 0 0 15px #00d4ff;
         }
     </style>
 </head>
 <body>
     <div class="lightning" id="lightning"></div>
+    <div class="toast" id="toast">Copied!</div>
     
     <div class="container">
         <div class="audio-control" onclick="toggleMusic()">
-            <i id="music-icon" class="fas fa-volume-up"></i>
+            <i id="music-icon" class="fas fa-play"></i>
         </div>
 
         <div class="logo-container">
@@ -293,20 +278,15 @@
         <h1>MOMO-XMD</h1>
 
         <div class="scrolling-text">
-            <marquee>💀 WELCOME FOR MOMO-XMD • THE ULTIMATE WHATSAPP BOT • POWERED BY RADI • OWNER MOMO47 • STAY ANONYMOUS 💀</marquee>
+            <marquee>💀 PAIRING SESSION • MOMO XMD OWNER MOMO47 • PAIRING SESSION • MOMO XMD OWNER MOMO47 💀</marquee>
         </div>
 
         <div class="stats" id="user-stats">
             <i class="fas fa-users"></i> TOTAL SERVER USERS: <span id="user-count">LOADING...</span>
         </div>
 
-            <div class="server-online" aria-label="Server status">
-                <span class="server-online-dot"></span> SERVER ONLINE
-            </div>
-
-        <div class="tabs">
-            <div class="tab active" id="tab-pairing" onclick="setMode('pairing')">PAIRING CODE</div>
-            <div class="tab" id="tab-qr" onclick="setMode('qr')">QR CODE</div>
+        <div class="server-online">
+            <span class="server-online-dot"></span> SERVER ONLINE
         </div>
 
         <div id="pairing-section">
@@ -314,33 +294,19 @@
                 <label>WHATSAPP NUMBER</label>
                 <input type="text" id="phone-number" placeholder="e.g. 255760298574">
             </div>
-            <button onclick="getPairingCode()" id="submit-btn">INITIALIZE LINK</button>
-        </div>
-
-        <div id="qr-section" style="display: none;">
-            <button onclick="getQR()" id="qr-btn">GENERATE QR</button>
+            <button onclick="getPairingCode()" id="submit-btn">GET PAIRING CODE</button>
         </div>
 
         <div class="loader" id="loader"></div>
-        <p id="loader-text" style="font-size: 0.8em; color: #ff0000; display: none;"></p>
 
         <div id="result">
-            <div id="pairing-display" style="display: none;">
+            <div id="pairing-display">
                 <div class="code-box" id="code-display" onclick="copyCode()">--------</div>
                 <button class="copy-btn" onclick="copyCode()">COPY CODE</button>
                 
                 <div style="margin-top: 20px;">
-                    <div class="status-dot" id="status-dot"></div>
                     <span id="status-text" style="font-size: 0.8em; color: #00d4ff;">WAITING FOR WHATSAPP...</span>
                 </div>
-
-                <div id="session-id-box"></div>
-                <button id="retry-btn" onclick="location.reload()">RETRY CONNECTION</button>
-            </div>
-
-            <div id="qr-display" style="display: none;">
-                <img id="qr-image" src="" alt="QR CODE" style="width: 200px; height: 200px; border: 4px solid #fff; border-radius: 10px;">
-                <p style="color: #00ff64; font-weight: bold;">SCAN TO AUTHORIZE</p>
             </div>
         </div>
 
@@ -353,23 +319,27 @@
 
     <script>
         let pollInterval;
-        let mode = 'pairing';
         const bgm = document.getElementById('bgm');
         const lightning = document.getElementById('lightning');
+        const toast = document.getElementById('toast');
 
         function toggleMusic() {
             const icon = document.getElementById('music-icon');
             if (bgm.paused) {
                 bgm.play().catch(e => {});
-                icon.className = 'fas fa-volume-up';
+                icon.className = 'fas fa-pause';
             } else {
                 bgm.pause();
-                icon.className = 'fas fa-volume-mute';
+                icon.className = 'fas fa-play';
             }
         }
 
+        // Start music on first click
         document.body.addEventListener('click', () => {
-            if (bgm.paused) bgm.play().catch(e => {});
+            if (bgm.paused) {
+                bgm.play().catch(e => {});
+                document.getElementById('music-icon').className = 'fas fa-pause';
+            }
         }, { once: true });
 
         setInterval(() => {
@@ -382,10 +352,8 @@
         async function fetchStats() {
             try {
                 const res = await fetch('/stats', { cache: 'no-store' });
-                if (!res.ok) throw new Error('stats request failed');
                 const data = await res.json();
-                const total = Number.isFinite(Number(data.totalPairings)) ? Number(data.totalPairings) : 0;
-                document.getElementById('user-count').innerText = total.toLocaleString();
+                document.getElementById('user-count').innerText = data.totalPairings || '0';
             } catch (e) {
                 document.getElementById('user-count').innerText = '0';
             }
@@ -393,150 +361,69 @@
         fetchStats();
         setInterval(fetchStats, 10000);
 
-        function setMode(m) {
-            mode = m;
-            document.getElementById('tab-pairing').classList.toggle('active', m === 'pairing');
-            document.getElementById('tab-qr').classList.toggle('active', m === 'qr');
-            document.getElementById('pairing-section').style.display = m === 'pairing' ? 'block' : 'none';
-            document.getElementById('qr-section').style.display = m === 'qr' ? 'block' : 'none';
-            document.getElementById('result').style.display = 'none';
-            if (pollInterval) clearInterval(pollInterval);
-        }
-
         async function getPairingCode() {
             const num = document.getElementById('phone-number').value;
             if (!num) return alert('ENTER NUMBER!');
 
             const btn = document.getElementById('submit-btn');
             const loader = document.getElementById('loader');
-            const loaderText = document.getElementById('loader-text');
             const result = document.getElementById('result');
 
             btn.disabled = true;
             loader.style.display = 'block';
-            loaderText.style.display = 'block';
-            loaderText.innerText = 'BYPASSING FIREWALLS...';
             result.style.display = 'none';
 
-            const controller = new AbortController();
-            const requestTimer = setTimeout(() => controller.abort(), 45000);
             try {
                 const res = await fetch('/pair', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ number: num }),
-                    cache: 'no-store',
-                    signal: controller.signal
+                    body: JSON.stringify({ number: num })
                 });
-                const raw = await res.text();
-                let data;
-                try { data = raw ? JSON.parse(raw) : {}; } catch { data = {}; }
+                const data = await res.json();
 
-                if (res.ok && data.success && data.sessionKey) {
-                    document.getElementById('code-display').innerText = data.code || 'WAITING...';
-                    document.getElementById('pairing-display').style.display = 'block';
-                    document.getElementById('qr-display').style.display = 'none';
-                    document.getElementById('status-text').innerText = data.code ? 'WAITING FOR WHATSAPP...' : 'REQUESTING PAIRING CODE...';
-                    result.style.display = 'block';
-                    startPolling(data.sessionKey);
+                if (res.ok && data.success) {
+                    pollStatus(data.sessionKey);
                 } else {
-                    throw new Error(data.error || data.message || `SERVER RETURNED HTTP ${res.status}`);
+                    alert(data.error || 'Failed to get code');
+                    btn.disabled = false;
+                    loader.style.display = 'none';
                 }
             } catch (e) {
-                const message = e.name === 'AbortError'
-                    ? 'SERVER TIMEOUT. Check the port or try the Heroku link.'
-                    : (e.message || 'SERVER ERROR');
-                alert(message);
-            } finally {
-                clearTimeout(requestTimer);
+                alert('Server Error');
                 btn.disabled = false;
                 loader.style.display = 'none';
-                loaderText.style.display = 'none';
             }
         }
 
-        function startPolling(key) {
-            if (pollInterval) clearInterval(pollInterval);
-            let failCount = 0;
+        function pollStatus(key) {
             pollInterval = setInterval(async () => {
-                const controller = new AbortController();
-                const requestTimer = setTimeout(() => controller.abort(), 10000);
                 try {
-                    const res = await fetch(`/session-status/${key}`, { cache: 'no-store', signal: controller.signal });
+                    const res = await fetch(`/session-status/${key}`);
                     const data = await res.json();
-                    const statusText = document.getElementById('status-text');
-                    const statusDot = document.getElementById('status-dot');
-                    const sessionBox = document.getElementById('session-id-box');
-                    const retryBtn = document.getElementById('retry-btn');
 
-                    if (data.code && document.getElementById('code-display').innerText !== data.code) {
+                    if (data.code) {
+                        document.getElementById('loader').style.display = 'none';
+                        document.getElementById('result').style.display = 'block';
                         document.getElementById('code-display').innerText = data.code;
-                        statusText.innerText = 'ENTER THIS CODE IN WHATSAPP LINKED DEVICES';
                     }
 
                     if (data.status === 'connected') {
-                        statusText.innerHTML = '<span style="color:#00ff64">SESSION SENT TO WHATSAPP INBOX!</span>';
-                        statusDot.className = 'status-dot active';
-                        if (data.sessionId) {
-                            sessionBox.innerText = data.sessionId;
-                            sessionBox.style.display = 'block';
-                        }
                         clearInterval(pollInterval);
-                        retryBtn.style.display = 'none';
-                    } else if (data.status === 'error' || data.status === 'closed' || data.status === 'close' || data.status === 'timeout' || data.status === 'delivery_failed') {
-                        statusText.textContent = data.message || 'CONNECTION FAILED. RETRY.';
-                        statusText.style.color = '#ff0000';
-                        statusDot.className = 'status-dot error';
-                        clearInterval(pollInterval);
-                        retryBtn.style.display = 'block';
-                    } else {
-                        statusText.innerText = 'STATUS: ' + String(data.status || 'CONNECTING').toUpperCase() + '...';
-                        failCount = 0;
+                        document.getElementById('status-text').innerText = 'CONNECTED SUCCESSFULLY!';
+                        document.getElementById('status-text').style.color = '#00ff64';
                     }
-                } catch (e) {
-                    failCount++;
-                    if (failCount >= 3) {
-                        statusText.innerText = e.name === 'AbortError' ? 'SERVER TIMEOUT — RETRY CONNECTION.' : 'SERVER UNAVAILABLE — RETRY CONNECTION.';
-                        statusText.style.color = '#ff0000';
-                        retryBtn.style.display = 'block';
-                    }
-                } finally {
-                    clearTimeout(requestTimer);
-                }
-            }, 2000);
+                } catch (e) {}
+            }, 3000);
         }
 
-        async function copyCode() {
-            const code = document.getElementById('code-display').innerText.trim();
-            if (!code || code === '--------' || code === 'WAITING...') {
-                alert('PAIRING CODE IS NOT READY YET.');
-                return;
-            }
-
-            let copied = false;
-            try {
-                if (navigator.clipboard && window.isSecureContext) {
-                    await navigator.clipboard.writeText(code);
-                    copied = true;
-                }
-            } catch (error) {}
-
-            if (!copied) {
-                const helper = document.createElement('textarea');
-                helper.value = code;
-                helper.setAttribute('readonly', '');
-                helper.style.position = 'fixed';
-                helper.style.left = '-9999px';
-                helper.style.top = '0';
-                document.body.appendChild(helper);
-                helper.focus();
-                helper.select();
-                helper.setSelectionRange(0, helper.value.length);
-                try { copied = document.execCommand('copy'); } catch (error) {}
-                helper.remove();
-            }
-
-            alert(copied ? 'PAIRING CODE COPIED!' : 'COPY FAILED. LONG-PRESS THE CODE TO COPY.');
+        function copyCode() {
+            const code = document.getElementById('code-display').innerText;
+            if (code === '--------') return;
+            
+            navigator.clipboard.writeText(code).then(() => {
+                toast.style.display = 'block';
+                setTimeout(() => { toast.style.display = 'none'; }, 2000);
+            });
         }
     </script>
 </body>
