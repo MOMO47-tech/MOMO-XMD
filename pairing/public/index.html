@@ -334,7 +334,16 @@
             }
         }
 
-        // Start music on first click
+        // Auto-play attempt on load
+        window.addEventListener('DOMContentLoaded', () => {
+            bgm.play().then(() => {
+                document.getElementById('music-icon').className = 'fas fa-pause';
+            }).catch(e => {
+                console.log('Autoplay blocked, waiting for interaction');
+            });
+        });
+
+        // Start music on first click as fallback
         document.body.addEventListener('click', () => {
             if (bgm.paused) {
                 bgm.play().catch(e => {});
