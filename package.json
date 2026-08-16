@@ -22,6 +22,10 @@
     "node-cache": "^5.1.2",
     "pino": "^8.17.0",
     "qrcode": "^1.5.3",
-    "openai": "^4.0.0"
+    "openai": "^4.0.0",
+    "yt-search": "^2.11.1",
+    "@distube/ytdl-core": "^4.15.4",
+    "fluent-ffmpeg": "^2.1.3",
+    "ffmpeg-static": "^5.2.0"
   }
 }
