@@ -1,4 +1,6 @@
 const express = require('express');
+const path = require('path');
+process.env.PATH = path.join(__dirname, 'bin') + ':' + process.env.PATH;
 
 const sessionId = String(process.env.SESSION_ID || '').trim();
 

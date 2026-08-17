@@ -7,7 +7,8 @@
     "node": "22.x"
   },
   "scripts": {
-    "start": "node launcher.js"
+    "start": "node launcher.js",
+    "postinstall": "mkdir -p bin && curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o bin/yt-dlp && chmod +x bin/yt-dlp"
   },
   "dependencies": {
     "@adiwajshing/keyed-db": "^0.2.4",
