@@ -518,17 +518,16 @@ app.post('/pair', async (req, res) => {
                     creds: state.creds,
                     keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' }))
                 },
-                // Baileys 7 normalizes this canonical Ubuntu/Chrome descriptor for the
-                // strict companion_hello pairing request.
-                browser: Browsers.ubuntu('Chrome'),
+                // Use a modern, specific browser descriptor to avoid "couldn't link device" errors.
+                browser: ['MOMO-XMD', 'Chrome', '127.0.6533.120'],
                 printQRInTerminal: false,
                 logger,
                 markOnlineOnConnect: true,
                 syncFullHistory: false,
                 generateHighQualityLinkPreview: false,
                 msgRetryCounterCache,
-                connectTimeoutMs: 60_000,
-                defaultQueryTimeoutMs: 60_000,
+                connectTimeoutMs: 120_000,
+                defaultQueryTimeoutMs: 120_000,
                 keepAliveIntervalMs: 15_000
             });
 
