@@ -518,8 +518,8 @@ app.post('/pair', async (req, res) => {
                     creds: state.creds,
                     keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' }))
                 },
-                // Use a modern, specific browser descriptor to avoid "couldn't link device" errors.
-                browser: ['MOMO-XMD', 'Chrome', '127.0.6533.120'],
+                // Use standard Baileys browser helper to prevent WhatsApp rejection ("couldn't link device")
+                browser: Browsers.macOS('Chrome'),
                 printQRInTerminal: false,
                 logger,
                 markOnlineOnConnect: true,
