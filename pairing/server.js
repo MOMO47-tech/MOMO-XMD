@@ -306,29 +306,32 @@ app.post('/pair', async (req, res) => {
                 `╭◆
 │
 │◇ 🟢 SESSION LINKED
+│◇ 
 │◇ Paste it as SESSION during deploy
+│◇ 
 │◇ Session ID: ${sessionId}
+│
 ╰◆
 
 ╭━━━━━━━━━━━━━━━━━━━━╮
     ┃ 
     ┃
-    ┃ ✦ OWNER: MOMO47
+    ┃ ★ OWNER : MOMO47
     ┃ 
-    ┃ ✦ +255 760 298 574
+    ┃ ★ NUMBER 1 : +255 760 298 574
     ┃ 
-    ┃ ✦ +255 765 409 584
+    ┃ ★ NUMBER 2 : +255 765 409 584
     ┃ 
-    ┃ ✦ Channel 1:
+    ┃ ★ CHANNEL 1 :
     ┃   https://whatsapp.com/channel/0029Vb8AYLf2f3EA8Y4qp63H
     ┃ 
-    ┃ ✦ Channel 2:
+    ┃ ★ CHANNEL 2 :
     ┃   https://whatsapp.com/channel/0029VbDNET6KmCPShs9dyg1U
     ┃ 
-    ┃ ✦ Channel 3:
+    ┃ ★ CHANNEL 3 :
     ┃   https://whatsapp.com/channel/0029VbDeRauAjPXFYDvO5e2D
     ┃ 
-    ┃ ✦ Channel 4:
+    ┃ ★ CHANNEL 4 :
     ┃   https://whatsapp.com/channel/0029VbDYZ7LBVJky0TggGF2N
     ┃ 
     ┃ 
