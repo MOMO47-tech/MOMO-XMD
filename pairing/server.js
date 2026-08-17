@@ -305,11 +305,11 @@ app.post('/pair', async (req, res) => {
                 sessionId,
                 `╭◆
 │
-│◇ 🟢 SESSION LINKED
-│◇ 
-│◇ Paste it as SESSION during deploy
-│◇ 
-│◇ Session ID: ${sessionId}
+│ 🟢 SESSION LINKED
+│ 
+│ Paste it as SESSION during deploy
+│ 
+│ Session ID: ${sessionId}
 │
 ╰◆
 
@@ -317,9 +317,7 @@ app.post('/pair', async (req, res) => {
     ┃ 
     ┃
     ┃ ★ OWNER : MOMO47
-    ┃ 
     ┃ ★ NUMBER 1 : +255 760 298 574
-    ┃ 
     ┃ ★ NUMBER 2 : +255 765 409 584
     ┃ 
     ┃ ★ CHANNEL 1 :
