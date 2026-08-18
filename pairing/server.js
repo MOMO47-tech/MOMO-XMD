@@ -8,8 +8,7 @@ const {
     useMultiFileAuthState,
     makeCacheableSignalKeyStore,
     DisconnectReason,
-    Browsers,
-    fetchLatestBaileysVersion
+    Browsers
 } = require('@whiskeysockets/baileys');
 
 const app = express();
@@ -124,11 +123,8 @@ app.post('/pair', async (req, res) => {
         fs.mkdirSync(authDir, { recursive: true });
 
         const { state, saveCreds } = await useMultiFileAuthState(authDir);
-        const { version } = await fetchLatestBaileysVersion();
         
-        // Ultra-Light Mode for Heroku IP Bypass
         const sock = makeWASocket({
-            version,
             auth: {
                 creds: state.creds,
                 keys: makeCacheableSignalKeyStore(state.keys, logger)
@@ -136,13 +132,11 @@ app.post('/pair', async (req, res) => {
             printQRInTerminal: false,
             logger: logger,
             browser: Browsers.ubuntu("Chrome"),
-            connectTimeoutMs: 90000,
-            defaultQueryTimeoutMs: 90000,
-            keepAliveIntervalMs: 15000,
+            connectTimeoutMs: 60000,
+            defaultQueryTimeoutMs: 60000,
+            keepAliveIntervalMs: 10000,
             emitOwnEvents: true,
-            markOnlineOnConnect: false,
-            syncFullHistory: false,
-            generateHighQualityLinkPreview: false
+            markOnlineOnConnect: true
         });
 
         sessions.set(sessionKey, { status: 'connecting', number });
@@ -165,7 +159,7 @@ app.post('/pair', async (req, res) => {
                     } catch (e) {
                         updateSession(sessionKey, { status: 'error', message: e.message || 'Failed to get code' });
                     }
-                }, 2000);
+                }, 3000);
             }
 
             if (connection === 'open') {
