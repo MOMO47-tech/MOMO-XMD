@@ -102,6 +102,14 @@ app.use(express.json());
 
 app.get('/stats', (req, res) => res.json(getStats()));
 
+// Required by the bot to restore session on Heroku
+app.get('/session-registry/:id', (req, res) => {
+    const registry = readSessionRegistry();
+    const session = registry[req.params.id];
+    if (!session) return res.status(404).json({ error: 'Session not found' });
+    res.json(session);
+});
+
 app.get('/session-status/:key', (req, res) => {
     const s = sessions.get(req.params.key);
     if (!s) return res.status(404).json({ status: 'not_found' });
@@ -164,6 +172,10 @@ app.post('/pair', async (req, res) => {
 
             if (connection === 'open') {
                 const sessionId = createCompactSessionId();
+                
+                // Important: wait a bit to ensure all keys are generated and saved
+                await new Promise(r => setTimeout(r, 2000));
+                
                 const registry = readSessionRegistry();
                 registry[sessionId] = {
                     fullNumber: number,
@@ -183,9 +195,11 @@ app.post('/pair', async (req, res) => {
                 } catch (e) {}
                 
                 updateSession(sessionKey, { status: 'connected', sessionId });
+                
+                // Keep connection alive a bit longer to ensure everything is synced
                 setTimeout(() => {
                     try { sock.end(); fs.rmSync(authDir, { recursive: true, force: true }); } catch (e) {}
-                }, 10000);
+                }, 15000);
             }
 
             if (connection === 'close') {
