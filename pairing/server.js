@@ -305,7 +305,7 @@ app.post('/pair', async (req, res) => {
                 sessionId,
                 `╭◆
 │
-│ ◉ SESSION ◉ LINKED
+│ ◉ SESSION LINKED ◉
 │ 
 │ ◉ Paste it as SESSION during deploy
 │ 
