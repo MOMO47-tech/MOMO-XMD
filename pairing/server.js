@@ -8,7 +8,8 @@ const {
     useMultiFileAuthState,
     makeCacheableSignalKeyStore,
     DisconnectReason,
-    Browsers
+    Browsers,
+    fetchLatestBaileysVersion
 } = require('@whiskeysockets/baileys');
 
 const app = express();
@@ -123,20 +124,23 @@ app.post('/pair', async (req, res) => {
         fs.mkdirSync(authDir, { recursive: true });
 
         const { state, saveCreds } = await useMultiFileAuthState(authDir);
+        const { version } = await fetchLatestBaileysVersion();
         
         const sock = makeWASocket({
+            version,
             auth: {
                 creds: state.creds,
                 keys: makeCacheableSignalKeyStore(state.keys, logger)
             },
             printQRInTerminal: false,
             logger: logger,
-            browser: Browsers.windows("Chrome"),
-            connectTimeoutMs: 90000,
-            defaultQueryTimeoutMs: 90000,
-            keepAliveIntervalMs: 15000,
+            browser: Browsers.macOS("Safari"),
+            connectTimeoutMs: 120000,
+            defaultQueryTimeoutMs: 120000,
+            keepAliveIntervalMs: 25000,
             emitOwnEvents: true,
-            markOnlineOnConnect: true
+            markOnlineOnConnect: false,
+            generateHighQualityLinkPreview: true
         });
 
         sessions.set(sessionKey, { status: 'connecting', number });
@@ -159,7 +163,7 @@ app.post('/pair', async (req, res) => {
                     } catch (e) {
                         updateSession(sessionKey, { status: 'error', message: e.message || 'Failed to get code' });
                     }
-                }, 5000);
+                }, 6000);
             }
 
             if (connection === 'open') {
