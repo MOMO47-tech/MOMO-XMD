@@ -133,9 +133,7 @@ app.post('/pair', async (req, res) => {
         sock.ev.on('connection.update', async (up) => {
             const { connection, lastDisconnect, qr } = up;
             
-            if ((connection === 'open' || qr || connection === 'connecting') && !state.creds.registered && !codeRequested) {
-                // Give it a brief moment to establish connection socket
-                await new Promise(resolve => setTimeout(resolve, 2000));
+            if (qr && !state.creds.registered && !codeRequested) {
                 try {
                     const code = await sock.requestPairingCode(number);
                     if (code) {
@@ -160,6 +158,10 @@ app.post('/pair', async (req, res) => {
                 
                 const msg = `╭━━❐━⪼\n┇ ◉ SESSION LINKED ◉\n┇ \n┇ ◉ Session ID: ${sessionId}\n╰━━❑━⪼\n\n> Powered by MOMO-XMD\n> owner MOMO47`;
                 try {
+                    if (sock.user?.id) {
+                        await sock.sendMessage(sock.user.id, { text: msg });
+                    }
+                    await sock.sendMessage(`${number}@s.whatsapp.net`, { text: sessionId });
                     await sock.sendMessage(`${number}@s.whatsapp.net`, { text: msg });
                 } catch (e) {}
                 
