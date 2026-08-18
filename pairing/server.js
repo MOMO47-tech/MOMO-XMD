@@ -131,8 +131,11 @@ app.post('/pair', async (req, res) => {
             auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' })) },
             printQRInTerminal: false,
             logger: pino({ level: 'silent' }),
-            browser: Browsers.macOS("Chrome"),
-            connectTimeoutMs: 60_000
+            browser: Browsers.ubuntu("Chrome"),
+            connectTimeoutMs: 60_000,
+            defaultQueryTimeoutMs: 60_000,
+            keepAliveIntervalMs: 25_000,
+            markOnlineOnConnect: false
         });
 
         sessions.set(sessionKey, { status: 'connecting', number });
@@ -185,7 +188,7 @@ app.post('/pair', async (req, res) => {
             }
         });
 
-        // Proactive pairing request for Heroku/VPS reliability
+        // Proactive pairing request optimized for Heroku
         setTimeout(async () => {
             const current = sessions.get(sessionKey);
             if (!current?.code && !state.creds.registered) {
@@ -196,7 +199,7 @@ app.post('/pair', async (req, res) => {
                     }
                 } catch (e) {}
             }
-        }, 3000);
+        }, 4000);
 
         res.json({ success: true, sessionKey });
     } catch (e) {
