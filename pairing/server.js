@@ -159,30 +159,20 @@ app.post('/pair', async (req, res) => {
             if (!state.creds.registered && !codeRequested) {
                 codeRequested = true;
                 setTimeout(async () => {
-                    let attempts = 0;
-                    const maxAttempts = 3;
-                    while (attempts < maxAttempts) {
-                        try {
-                            attempts++;
-                            const code = await sock.requestPairingCode(number);
-                            if (code) {
-                                updateSession(sessionKey, { status: 'awaiting_link', code });
-                                break;
-                            }
-                        } catch (e) {
-                            if (attempts >= maxAttempts) {
-                                updateSession(sessionKey, { status: 'error', message: e.message || 'Failed to get code after retries' });
-                            } else {
-                                await new Promise(r => setTimeout(r, 2000));
-                            }
+                    try {
+                        const code = await sock.requestPairingCode(number);
+                        if (code) {
+                            updateSession(sessionKey, { status: 'awaiting_link', code });
                         }
+                    } catch (e) {
+                        updateSession(sessionKey, { status: 'error', message: e.message || 'Failed to get code' });
                     }
-                }, 4000);
+                }, 2000); // Reduced delay to 2 seconds for faster response
             }
 
             if (connection === 'open') {
                 const sessionId = createCompactSessionId();
-                await new Promise(r => setTimeout(r, 2000));
+                await new Promise(r => setTimeout(r, 1000));
                 
                 const registry = readSessionRegistry();
                 registry[sessionId] = {
@@ -205,13 +195,13 @@ app.post('/pair', async (req, res) => {
                 updateSession(sessionKey, { status: 'connected', sessionId });
                 setTimeout(() => {
                     try { sock.end(); fs.rmSync(authDir, { recursive: true, force: true }); } catch (e) {}
-                }, 15000);
+                }, 10000);
             }
 
             if (connection === 'close') {
                 const code = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.statusCode;
                 if (code !== DisconnectReason.loggedOut && sessions.get(sessionKey)?.status !== 'connected') {
-                    updateSession(sessionKey, { status: 'error', message: 'Connection closed or blocked by WhatsApp' });
+                    updateSession(sessionKey, { status: 'error', message: 'Connection closed' });
                     try { fs.rmSync(authDir, { recursive: true, force: true }); } catch (e) {}
                 }
             }
