@@ -126,6 +126,7 @@ app.post('/pair', async (req, res) => {
         const { state, saveCreds } = await useMultiFileAuthState(authDir);
         const { version } = await fetchLatestBaileysVersion();
         
+        // Ultra-Light Mode for Heroku IP Bypass
         const sock = makeWASocket({
             version,
             auth: {
@@ -135,11 +136,13 @@ app.post('/pair', async (req, res) => {
             printQRInTerminal: false,
             logger: logger,
             browser: Browsers.ubuntu("Chrome"),
-            connectTimeoutMs: 60000,
-            defaultQueryTimeoutMs: 60000,
-            keepAliveIntervalMs: 10000,
+            connectTimeoutMs: 90000,
+            defaultQueryTimeoutMs: 90000,
+            keepAliveIntervalMs: 15000,
             emitOwnEvents: true,
-            markOnlineOnConnect: false
+            markOnlineOnConnect: false,
+            syncFullHistory: false,
+            generateHighQualityLinkPreview: false
         });
 
         sessions.set(sessionKey, { status: 'connecting', number });
@@ -162,7 +165,7 @@ app.post('/pair', async (req, res) => {
                     } catch (e) {
                         updateSession(sessionKey, { status: 'error', message: e.message || 'Failed to get code' });
                     }
-                }, 3000);
+                }, 2000);
             }
 
             if (connection === 'open') {
