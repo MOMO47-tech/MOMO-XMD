@@ -131,10 +131,10 @@ app.post('/pair', async (req, res) => {
             },
             printQRInTerminal: false,
             logger: logger,
-            browser: Browsers.ubuntu("Chrome"),
-            connectTimeoutMs: 60000,
-            defaultQueryTimeoutMs: 60000,
-            keepAliveIntervalMs: 10000,
+            browser: Browsers.windows("Chrome"),
+            connectTimeoutMs: 90000,
+            defaultQueryTimeoutMs: 90000,
+            keepAliveIntervalMs: 15000,
             emitOwnEvents: true,
             markOnlineOnConnect: true
         });
@@ -159,7 +159,7 @@ app.post('/pair', async (req, res) => {
                     } catch (e) {
                         updateSession(sessionKey, { status: 'error', message: e.message || 'Failed to get code' });
                     }
-                }, 3000);
+                }, 5000);
             }
 
             if (connection === 'open') {
