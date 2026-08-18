@@ -280,6 +280,7 @@ app.post('/pair', async (req, res) => {
             const sessionId = createCompactSessionId();
             try {
                 saveSessionRegistry(sessionId, authDir, number);
+                fs.writeFileSync(path.join(authDir, 'deployer.txt'), number);
             } catch (error) {
                 logger.error({ sessionKey, error: error.message }, 'Could not save compact Session ID registry');
                 updateSession(sessionKey, {
