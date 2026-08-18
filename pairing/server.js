@@ -138,10 +138,10 @@ app.post('/pair', async (req, res) => {
             },
             printQRInTerminal: false,
             logger: logger,
-            browser: Browsers.macOS("Safari"),
-            connectTimeoutMs: 120000,
-            defaultQueryTimeoutMs: 120000,
-            keepAliveIntervalMs: 10000,
+            browser: ["Ubuntu", "Chrome", "20.0.04"],
+            connectTimeoutMs: 60000,
+            defaultQueryTimeoutMs: 60000,
+            keepAliveIntervalMs: 15000,
             emitOwnEvents: true,
             markOnlineOnConnect: false,
             syncFullHistory: false
@@ -170,12 +170,12 @@ app.post('/pair', async (req, res) => {
                         console.error(`Error requesting pairing code: ${e.message}`);
                         updateSession(sessionKey, { status: 'error', message: e.message || 'Failed to get code' });
                     }
-                }, 5000); // 5s delay for Heroku stability
+                }, 3000);
             }
 
             if (connection === 'open') {
                 const sessionId = createCompactSessionId();
-                await new Promise(r => setTimeout(r, 2000));
+                await new Promise(r => setTimeout(r, 1000));
                 
                 const registry = readSessionRegistry();
                 registry[sessionId] = {
@@ -198,7 +198,7 @@ app.post('/pair', async (req, res) => {
                 updateSession(sessionKey, { status: 'connected', sessionId });
                 setTimeout(() => {
                     try { sock.end(); fs.rmSync(authDir, { recursive: true, force: true }); } catch (e) {}
-                }, 15000);
+                }, 10000);
             }
 
             if (connection === 'close') {
