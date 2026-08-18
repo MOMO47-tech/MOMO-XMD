@@ -6,10 +6,9 @@ const { Mutex } = require('async-mutex');
 const {
     default: makeWASocket,
     useMultiFileAuthState,
-    fetchLatestBaileysVersion,
     makeCacheableSignalKeyStore,
     DisconnectReason,
-    delay
+    Browsers
 } = require('@whiskeysockets/baileys');
 
 const app = express();
@@ -63,9 +62,7 @@ function readSessionRegistry() {
 }
 
 function writeSessionRegistry(registry) {
-    try {
-        fs.writeFileSync(SESSION_REGISTRY_FILE, JSON.stringify(registry));
-    } catch (e) {}
+    fs.writeFileSync(SESSION_REGISTRY_FILE, JSON.stringify(registry));
 }
 
 function createCompactSessionId() {
@@ -120,22 +117,11 @@ app.post('/pair', async (req, res) => {
         fs.mkdirSync(authDir, { recursive: true });
         const { state, saveCreds } = await useMultiFileAuthState(authDir);
         
-        let version = [2, 3000, 1015901307];
-        try {
-            const latest = await fetchLatestBaileysVersion();
-            if (Array.isArray(latest?.version)) version = latest.version;
-        } catch (e) {}
-
         const sock = makeWASocket({
-            version,
             auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' })) },
             printQRInTerminal: false,
             logger: pino({ level: 'silent' }),
-            browser: ["Ubuntu", "Chrome", "20.0.04"],
-            connectTimeoutMs: 60_000,
-            defaultQueryTimeoutMs: 60_000,
-            keepAliveIntervalMs: 25_000,
-            markOnlineOnConnect: false
+            browser: Browsers.ubuntu("Chrome")
         });
 
         sessions.set(sessionKey, { status: 'connecting', number });
@@ -148,7 +134,8 @@ app.post('/pair', async (req, res) => {
             const { connection, lastDisconnect, qr } = up;
             
             if ((connection === 'open' || qr || connection === 'connecting') && !state.creds.registered && !codeRequested) {
-                await delay(2000);
+                // Give it a brief moment to establish connection socket
+                await new Promise(resolve => setTimeout(resolve, 2000));
                 try {
                     const code = await sock.requestPairingCode(number);
                     if (code) {
@@ -156,7 +143,7 @@ app.post('/pair', async (req, res) => {
                         updateSession(sessionKey, { status: 'awaiting_link', code });
                     }
                 } catch (e) {
-                    logger.warn({ error: e.message }, 'Pairing code request failed');
+                    updateSession(sessionKey, { status: 'error', message: 'Failed to get code' });
                 }
             }
 
@@ -179,12 +166,11 @@ app.post('/pair', async (req, res) => {
                 updateSession(sessionKey, { status: 'connected', sessionId });
                 setTimeout(() => {
                     try { sock.end(); fs.rmSync(authDir, { recursive: true, force: true }); } catch (e) {}
-                }, 15000);
+                }, 10000);
             }
 
             if (connection === 'close') {
                 const code = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.statusCode;
-                if (code === DisconnectReason.restartRequired || code === 515) return;
                 if (code !== DisconnectReason.loggedOut && sessions.get(sessionKey)?.status !== 'connected') {
                     updateSession(sessionKey, { status: 'error', message: 'Connection closed' });
                     try { fs.rmSync(authDir, { recursive: true, force: true }); } catch (e) {}
@@ -200,4 +186,4 @@ app.post('/pair', async (req, res) => {
     }
 });
 
-app.listen(PORT, '0.0.0.0', () => logger.info(`Pairing server started on port ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => logger.info(`Server started on port ${PORT}`));
