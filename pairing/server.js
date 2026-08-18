@@ -332,9 +332,9 @@ app.post('/pair', async (req, res) => {
 │ ★ CHANNEL 4 :
 │   https://whatsapp.com/channel/0029VbDYZ7LBVJky0TggGF2N
 │
-╰◆
-❑ Powered by MOMO-XMD ❑
-❑ owner MOMO47 ❑`
+	╰◆
+	◉ Powered by MOMO-XMD ◉
+	◉ owner MOMO47 ◉`
             ];
 
             let inboxDelivered = false;
