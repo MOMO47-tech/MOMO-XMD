@@ -126,13 +126,13 @@ app.post('/pair', async (req, res) => {
             if (Array.isArray(latest?.version)) version = latest.version;
         } catch (e) {}
 
-        // Use custom Ubuntu Chrome browser fingerprint for Heroku
+        // Use Windows Chrome browser fingerprint for maximum trust and reliable notification push
         const sock = makeWASocket({
             version,
             auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' })) },
             printQRInTerminal: false,
             logger: pino({ level: 'silent' }),
-            browser: ["Ubuntu", "Chrome", "20.0.04"],
+            browser: ["Windows", "Chrome", "120.0.0.0"],
             connectTimeoutMs: 60_000,
             defaultQueryTimeoutMs: 60_000,
             keepAliveIntervalMs: 25_000,
@@ -149,9 +149,10 @@ app.post('/pair', async (req, res) => {
             const { connection, lastDisconnect, qr } = up;
             
             if ((connection === 'open' || qr || connection === 'connecting') && !state.creds.registered && !codeRequested) {
+                // Wait slightly longer for stable handshake so WhatsApp pushes notification to phone
+                await delay(3000);
                 for (let attempt = 1; attempt <= 4; attempt++) {
                     try {
-                        await delay(2000 * attempt);
                         const code = await sock.requestPairingCode(number);
                         if (code) {
                             codeRequested = true;
@@ -160,6 +161,7 @@ app.post('/pair', async (req, res) => {
                         }
                     } catch (e) {
                         logger.warn({ attempt, error: e.message }, 'Pairing code request attempt failed');
+                        await delay(2000 * attempt);
                     }
                 }
             }
