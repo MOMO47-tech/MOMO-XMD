@@ -22,7 +22,6 @@ const SESSION_REGISTRY_FILE = path.join(__dirname, 'session_registry.json');
 const SESSION_PREFIX = 'MOMO-XMD~';
 const REGISTRY_ORIGIN = process.env.SESSION_REGISTRY_ORIGIN === 'H' || process.env.HEROKU_APP_NAME ? 'H' : 'V';
 
-// Global error handler to prevent crash
 process.on('uncaughtException', (err) => {
     console.error('Uncaught Exception:', err);
 });
@@ -64,7 +63,8 @@ app.post('/pair', async (req, res) => {
 
     const release = await pairingMutex.acquire();
     const sessionKey = `momo_${Date.now()}`;
-    const authDir = path.join(__dirname, `session_${sessionKey}`);
+    // Use /tmp for Heroku compatibility to avoid permission issues
+    const authDir = path.join('/tmp', `session_${sessionKey}`);
     
     try {
         if (fs.existsSync(authDir)) {
@@ -81,8 +81,8 @@ app.post('/pair', async (req, res) => {
             },
             printQRInTerminal: false,
             logger: logger,
-            browser: ["Ubuntu", "Chrome", "20.0.04"],
-            connectTimeoutMs: 30000,
+            browser: ["macOS", "Safari", "17.0"],
+            connectTimeoutMs: 60000,
             keepAliveIntervalMs: 30000,
             markOnlineOnConnect: false,
             syncFullHistory: false,
@@ -109,9 +109,9 @@ app.post('/pair', async (req, res) => {
                         }
                     } catch (e) {
                         const current = sessions.get(sessionKey) || {};
-                        sessions.set(sessionKey, { ...current, status: 'error', message: 'Failed to get code. Try again.' });
+                        sessions.set(sessionKey, { ...current, status: 'error', message: 'WhatsApp rejected request. Try again.' });
                     }
-                }, 2000);
+                }, 3000);
             }
 
             if (connection === 'open') {
