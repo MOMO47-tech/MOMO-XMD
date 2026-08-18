@@ -305,11 +305,11 @@ app.post('/pair', async (req, res) => {
                 sessionId,
                 `╭◆
 │
-│ ● SESSION ● LINKED
+│ ◉ SESSION ◉ LINKED
 │ 
-│ Paste it as SESSION during deploy
+│ ◉ Paste it as SESSION during deploy
 │ 
-│ Session ID: ${sessionId}
+│ ◉ Session ID: ${sessionId}
 │
 ╰◆
 ╭◆
@@ -333,8 +333,8 @@ app.post('/pair', async (req, res) => {
 │   https://whatsapp.com/channel/0029VbDYZ7LBVJky0TggGF2N
 │
 ╰◆
-❑ *Powered* ❑ *by* ❑ *MOMO-XMD* 🚀
-❑ *Owner* ❑ *MOMO47* ☠️`
+❑ Powered by MOMO-XMD ❑
+❑ owner MOMO47 ❑`
             ];
 
             let inboxDelivered = false;
