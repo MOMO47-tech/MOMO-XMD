@@ -13,7 +13,7 @@ const {
 
 const app = express();
 const PORT = Number(process.env.PORT || 8000);
-const logger = pino({ level: process.env.LOG_LEVEL || 'info' });
+const logger = pino({ level: 'silent' });
 const pairingMutex = new Mutex();
 const sessions = new Map();
 
@@ -25,20 +25,23 @@ const REGISTRY_ORIGIN = process.env.SESSION_REGISTRY_ORIGIN === 'H' || process.e
 if (!fs.existsSync(STATS_FILE)) {
     try { fs.writeFileSync(STATS_FILE, JSON.stringify({ totalPairings: 0 })); } catch (e) {}
 }
+if (!fs.existsSync(SESSION_REGISTRY_FILE)) {
+    try { fs.writeFileSync(SESSION_REGISTRY_FILE, JSON.stringify({})); } catch (e) {}
+}
 
 function getStats() {
     try {
-        let count = 0;
+        let registryCount = 0;
         if (fs.existsSync(SESSION_REGISTRY_FILE)) {
             const registry = JSON.parse(fs.readFileSync(SESSION_REGISTRY_FILE, 'utf8'));
-            count = Object.keys(registry).length;
+            registryCount = Object.keys(registry).length;
         }
-        let persistentCount = 0;
+        let statsCount = 0;
         if (fs.existsSync(STATS_FILE)) {
             const stats = JSON.parse(fs.readFileSync(STATS_FILE, 'utf8'));
-            persistentCount = Number(stats.totalPairings || 0);
+            statsCount = Number(stats.totalPairings || 0);
         }
-        return { totalPairings: Math.max(count, persistentCount) };
+        return { totalPairings: Math.max(registryCount, statsCount) };
     } catch (e) { return { totalPairings: 0 }; }
 }
 
@@ -114,13 +117,17 @@ app.post('/pair', async (req, res) => {
     const authDir = path.join(__dirname, `session_${sessionKey}`);
     
     try {
+        if (fs.existsSync(authDir)) {
+            fs.rmSync(authDir, { recursive: true, force: true });
+        }
         fs.mkdirSync(authDir, { recursive: true });
+
         const { state, saveCreds } = await useMultiFileAuthState(authDir);
         
         const sock = makeWASocket({
-            auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' })) },
+            auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, logger) },
             printQRInTerminal: false,
-            logger: pino({ level: 'silent' }),
+            logger: logger,
             browser: Browsers.ubuntu("Chrome")
         });
 
@@ -131,18 +138,20 @@ app.post('/pair', async (req, res) => {
         let codeRequested = false;
 
         sock.ev.on('connection.update', async (up) => {
-            const { connection, lastDisconnect, qr } = up;
+            const { connection, lastDisconnect } = up;
             
-            if (qr && !state.creds.registered && !codeRequested) {
-                try {
-                    const code = await sock.requestPairingCode(number);
-                    if (code) {
-                        codeRequested = true;
-                        updateSession(sessionKey, { status: 'awaiting_link', code });
+            if (!state.creds.registered && !codeRequested) {
+                codeRequested = true;
+                setTimeout(async () => {
+                    try {
+                        const code = await sock.requestPairingCode(number);
+                        if (code) {
+                            updateSession(sessionKey, { status: 'awaiting_link', code });
+                        }
+                    } catch (e) {
+                        updateSession(sessionKey, { status: 'error', message: 'Failed to get code' });
                     }
-                } catch (e) {
-                    updateSession(sessionKey, { status: 'error', message: 'Failed to get code' });
-                }
+                }, 3000);
             }
 
             if (connection === 'open') {
@@ -188,4 +197,4 @@ app.post('/pair', async (req, res) => {
     }
 });
 
-app.listen(PORT, '0.0.0.0', () => logger.info(`Server started on port ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => {});
