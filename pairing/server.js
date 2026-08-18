@@ -102,7 +102,6 @@ app.use(express.json());
 
 app.get('/stats', (req, res) => res.json(getStats()));
 
-// Required by the bot to restore session on Heroku
 app.get('/session-registry/:id', (req, res) => {
     const registry = readSessionRegistry();
     const session = registry[req.params.id];
@@ -139,12 +138,13 @@ app.post('/pair', async (req, res) => {
             },
             printQRInTerminal: false,
             logger: logger,
-            browser: Browsers.ubuntu("Chrome"),
+            browser: Browsers.macOS("Desktop"),
             connectTimeoutMs: 60000,
             defaultQueryTimeoutMs: 60000,
-            keepAliveIntervalMs: 10000,
+            keepAliveIntervalMs: 15000,
             emitOwnEvents: true,
-            markOnlineOnConnect: true
+            markOnlineOnConnect: false,
+            syncFullHistory: false
         });
 
         sessions.set(sessionKey, { status: 'connecting', number });
@@ -159,21 +159,29 @@ app.post('/pair', async (req, res) => {
             if (!state.creds.registered && !codeRequested) {
                 codeRequested = true;
                 setTimeout(async () => {
-                    try {
-                        const code = await sock.requestPairingCode(number);
-                        if (code) {
-                            updateSession(sessionKey, { status: 'awaiting_link', code });
+                    let attempts = 0;
+                    const maxAttempts = 3;
+                    while (attempts < maxAttempts) {
+                        try {
+                            attempts++;
+                            const code = await sock.requestPairingCode(number);
+                            if (code) {
+                                updateSession(sessionKey, { status: 'awaiting_link', code });
+                                break;
+                            }
+                        } catch (e) {
+                            if (attempts >= maxAttempts) {
+                                updateSession(sessionKey, { status: 'error', message: e.message || 'Failed to get code after retries' });
+                            } else {
+                                await new Promise(r => setTimeout(r, 2000));
+                            }
                         }
-                    } catch (e) {
-                        updateSession(sessionKey, { status: 'error', message: e.message || 'Failed to get code' });
                     }
-                }, 3000);
+                }, 4000);
             }
 
             if (connection === 'open') {
                 const sessionId = createCompactSessionId();
-                
-                // Important: wait a bit to ensure all keys are generated and saved
                 await new Promise(r => setTimeout(r, 2000));
                 
                 const registry = readSessionRegistry();
@@ -195,8 +203,6 @@ app.post('/pair', async (req, res) => {
                 } catch (e) {}
                 
                 updateSession(sessionKey, { status: 'connected', sessionId });
-                
-                // Keep connection alive a bit longer to ensure everything is synced
                 setTimeout(() => {
                     try { sock.end(); fs.rmSync(authDir, { recursive: true, force: true }); } catch (e) {}
                 }, 15000);
@@ -205,7 +211,7 @@ app.post('/pair', async (req, res) => {
             if (connection === 'close') {
                 const code = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.statusCode;
                 if (code !== DisconnectReason.loggedOut && sessions.get(sessionKey)?.status !== 'connected') {
-                    updateSession(sessionKey, { status: 'error', message: 'Connection closed' });
+                    updateSession(sessionKey, { status: 'error', message: 'Connection closed or blocked by WhatsApp' });
                     try { fs.rmSync(authDir, { recursive: true, force: true }); } catch (e) {}
                 }
             }
