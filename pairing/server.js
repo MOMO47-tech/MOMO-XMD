@@ -130,7 +130,7 @@ app.post('/pair', async (req, res) => {
             auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' })) },
             printQRInTerminal: false,
             logger: pino({ level: 'silent' }),
-            browser: Browsers.macOS("Safari"),
+            browser: Browsers.ubuntu("Chrome"),
             connectTimeoutMs: 60_000
         });
 
@@ -147,7 +147,7 @@ app.post('/pair', async (req, res) => {
             if (!codeRequested && !state.creds.registered) {
                 codeRequested = true;
                 try {
-                    await delay(2500);
+                    await delay(3000);
                     pairingCode = await sock.requestPairingCode(number);
                     if (pairingCode) {
                         updateSession(sessionKey, { status: 'awaiting_link', code: pairingCode });
@@ -191,9 +191,9 @@ app.post('/pair', async (req, res) => {
             }
         });
 
-        // Wait up to 12 seconds for pairing code
+        // Wait up to 15 seconds for pairing code
         let wait = 0;
-        while (!pairingCode && wait < 12) {
+        while (!pairingCode && wait < 15) {
             await delay(1000);
             wait++;
             const current = sessions.get(sessionKey);
