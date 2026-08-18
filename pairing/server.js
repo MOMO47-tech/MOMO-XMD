@@ -109,7 +109,7 @@ app.get('/session-status/:key', (req, res) => {
 
 app.post('/pair', async (req, res) => {
     const number = cleanNumber(req.body?.number);
-    if (!/^\d{8,15}$/.test(number)) return res.status(400).json({ error: 'Invalid number' });
+    if (!/^\d{8,15}$/.test(number)) return res.status(400).json({ success: false, error: 'Invalid number' });
 
     const release = await pairingMutex.acquire();
     const sessionKey = `momo_${Date.now()}`;
@@ -130,33 +130,34 @@ app.post('/pair', async (req, res) => {
             auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' })) },
             printQRInTerminal: false,
             logger: pino({ level: 'silent' }),
-            browser: Browsers.macOS("Desktop"),
+            browser: Browsers.ubuntu("Chrome"),
             connectTimeoutMs: 60_000
         });
 
         sessions.set(sessionKey, { status: 'connecting', number });
 
-        let codeRequested = false;
-        let pairingSuccess = false;
+        let pairingCode = null;
 
         sock.ev.on('creds.update', saveCreds);
-        sock.ev.on('connection.update', async (up) => {
-            const { connection, lastDisconnect, qr } = up;
-            
-            if ((qr || sock.user) && !codeRequested && !state.creds.registered) {
-                codeRequested = true;
-                try {
-                    await delay(3000);
-                    const code = await sock.requestPairingCode(number);
-                    if (code) {
-                        pairingSuccess = true;
-                        updateSession(sessionKey, { status: 'awaiting_link', code });
+        
+        // Attempt to request pairing code after brief delay
+        setTimeout(async () => {
+            try {
+                if (!state.creds.registered) {
+                    await delay(2000);
+                    pairingCode = await sock.requestPairingCode(number);
+                    if (pairingCode) {
+                        updateSession(sessionKey, { status: 'awaiting_link', code: pairingCode });
                     }
-                } catch (e) {
-                    logger.error({ error: e.message }, 'Pairing code request failed');
                 }
+            } catch (e) {
+                logger.error({ error: e.message }, 'Failed to request pairing code');
             }
+        }, 3000);
 
+        sock.ev.on('connection.update', async (up) => {
+            const { connection, lastDisconnect } = up;
+            
             if (connection === 'open') {
                 const sessionId = createCompactSessionId();
                 const registry = readSessionRegistry();
@@ -181,10 +182,6 @@ app.post('/pair', async (req, res) => {
 
             if (connection === 'close') {
                 const code = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.statusCode;
-                if (code === DisconnectReason.restartRequired || code === 515) {
-                    // Reconnect for post-pairing restart
-                    return;
-                }
                 if (code !== DisconnectReason.loggedOut && sessions.get(sessionKey)?.status !== 'connected') {
                     updateSession(sessionKey, { status: 'error', message: 'Connection closed' });
                     try { fs.rmSync(authDir, { recursive: true, force: true }); } catch (e) {}
@@ -192,28 +189,30 @@ app.post('/pair', async (req, res) => {
             }
         });
 
-        // Wait up to 12 seconds for the pairing code to be generated
+        // Wait up to 10 seconds for code
         let wait = 0;
-        while (!pairingSuccess && wait < 12) {
+        while (!pairingCode && wait < 10) {
             await delay(1000);
             wait++;
             const current = sessions.get(sessionKey);
-            if (current?.code) break;
+            if (current?.code) {
+                pairingCode = current.code;
+                break;
+            }
         }
 
-        const current = sessions.get(sessionKey);
-        if (current?.code) {
+        if (pairingCode) {
             return res.json({ success: true, sessionKey });
         } else {
-            // Try explicit fallback request
+            // One last explicit attempt
             try {
-                const code = await sock.requestPairingCode(number);
-                if (code) {
-                    updateSession(sessionKey, { status: 'awaiting_link', code });
+                pairingCode = await sock.requestPairingCode(number);
+                if (pairingCode) {
+                    updateSession(sessionKey, { status: 'awaiting_link', code: pairingCode });
                     return res.json({ success: true, sessionKey });
                 }
             } catch (e) {}
-            
+
             return res.status(500).json({ success: false, error: 'Could not generate pairing code. Please retry.' });
         }
     } catch (e) {
