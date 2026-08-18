@@ -134,14 +134,12 @@ app.post('/pair', async (req, res) => {
             },
             printQRInTerminal: false,
             logger: logger,
-            browser: Browsers.windows("Edge"),
+            browser: Browsers.macOS("Desktop"),
             connectTimeoutMs: 60000,
             defaultQueryTimeoutMs: 60000,
-            keepAliveIntervalMs: 10000,
+            keepAliveIntervalMs: 15000,
             emitOwnEvents: true,
-            markOnlineOnConnect: false,
-            syncFullHistory: false,
-            generateHighQualityLinkPreview: false
+            markOnlineOnConnect: false
         });
 
         sessions.set(sessionKey, { status: 'connecting', number });
@@ -164,7 +162,7 @@ app.post('/pair', async (req, res) => {
                     } catch (e) {
                         updateSession(sessionKey, { status: 'error', message: e.message || 'Failed to get code' });
                     }
-                }, 3000);
+                }, 4000);
             }
 
             if (connection === 'open') {
