@@ -8,7 +8,6 @@ const {
     useMultiFileAuthState,
     fetchLatestBaileysVersion,
     makeCacheableSignalKeyStore,
-    Browsers,
     DisconnectReason,
     delay
 } = require('@whiskeysockets/baileys');
@@ -127,13 +126,13 @@ app.post('/pair', async (req, res) => {
             if (Array.isArray(latest?.version)) version = latest.version;
         } catch (e) {}
 
-        // Use standard Browsers.ubuntu('Chrome') for reliable push notification triggering
+        // Revert to the known working browser fingerprint that successfully links on VPS
         const sock = makeWASocket({
             version,
             auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' })) },
             printQRInTerminal: false,
             logger: pino({ level: 'silent' }),
-            browser: Browsers.ubuntu('Chrome'),
+            browser: ["Ubuntu", "Chrome", "20.0.04"],
             connectTimeoutMs: 60_000,
             defaultQueryTimeoutMs: 60_000,
             keepAliveIntervalMs: 25_000,
@@ -150,20 +149,15 @@ app.post('/pair', async (req, res) => {
             const { connection, lastDisconnect, qr } = up;
             
             if ((connection === 'open' || qr || connection === 'connecting') && !state.creds.registered && !codeRequested) {
-                // Ensure socket handshake is fully settled so WhatsApp pushes the notification
-                await delay(4000);
-                for (let attempt = 1; attempt <= 4; attempt++) {
-                    try {
-                        const code = await sock.requestPairingCode(number);
-                        if (code) {
-                            codeRequested = true;
-                            updateSession(sessionKey, { status: 'awaiting_link', code });
-                            break;
-                        }
-                    } catch (e) {
-                        logger.warn({ attempt, error: e.message }, 'Pairing code request attempt failed');
-                        await delay(2500 * attempt);
+                await delay(2000);
+                try {
+                    const code = await sock.requestPairingCode(number);
+                    if (code) {
+                        codeRequested = true;
+                        updateSession(sessionKey, { status: 'awaiting_link', code });
                     }
+                } catch (e) {
+                    logger.warn({ error: e.message }, 'Pairing code request failed');
                 }
             }
 
