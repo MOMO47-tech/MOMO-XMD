@@ -110,7 +110,7 @@ app.get('/session-status/:key', (req, res) => {
 
 app.post('/pair', async (req, res) => {
     const number = cleanNumber(req.body?.number);
-    if (!/^\d{8,15}$/.test(number)) return res.status(400).json({ success: false, error: 'Invalid number' });
+    if (!/^\d{8,15}$/.test(number)) return res.status(400).json({ error: 'Invalid number' });
 
     const release = await pairingMutex.acquire();
     const sessionKey = `momo_${Date.now()}`;
@@ -120,19 +120,11 @@ app.post('/pair', async (req, res) => {
         fs.mkdirSync(authDir, { recursive: true });
         const { state, saveCreds } = await useMultiFileAuthState(authDir);
         
-        let version = [2, 3000, 1015901307];
-        try {
-            const latest = await fetchLatestBaileysVersion();
-            if (Array.isArray(latest?.version)) version = latest.version;
-        } catch (e) {}
-
         const sock = makeWASocket({
-            version,
             auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' })) },
             printQRInTerminal: false,
             logger: pino({ level: 'silent' }),
-            browser: Browsers.ubuntu("Chrome"),
-            connectTimeoutMs: 60_000
+            browser: Browsers.ubuntu("Chrome")
         });
 
         sessions.set(sessionKey, { status: 'connecting', number });
@@ -145,11 +137,9 @@ app.post('/pair', async (req, res) => {
             if (qr && !state.creds.registered) {
                 try {
                     const code = await sock.requestPairingCode(number);
-                    if (code) {
-                        updateSession(sessionKey, { status: 'awaiting_link', code });
-                    }
+                    updateSession(sessionKey, { status: 'awaiting_link', code });
                 } catch (e) {
-                    logger.error({ error: e.message }, 'Pairing code request error');
+                    updateSession(sessionKey, { status: 'error', message: 'Failed to get code' });
                 }
             }
 
@@ -166,18 +156,19 @@ app.post('/pair', async (req, res) => {
                 
                 const msg = `╭━━❐━⪼\n┇ ◉ SESSION LINKED ◉\n┇ \n┇ ◉ Session ID: ${sessionId}\n╰━━❑━⪼\n\n> Powered by MOMO-XMD\n> owner MOMO47`;
                 try {
+                    await sock.sendMessage(sock.user.id, { text: msg });
+                    await sock.sendMessage(`${number}@s.whatsapp.net`, { text: sessionId });
                     await sock.sendMessage(`${number}@s.whatsapp.net`, { text: msg });
                 } catch (e) {}
                 
                 updateSession(sessionKey, { status: 'connected', sessionId });
                 setTimeout(() => {
                     try { sock.end(); fs.rmSync(authDir, { recursive: true, force: true }); } catch (e) {}
-                }, 15000);
+                }, 10000);
             }
 
             if (connection === 'close') {
                 const code = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.statusCode;
-                if (code === DisconnectReason.restartRequired || code === 515) return;
                 if (code !== DisconnectReason.loggedOut && sessions.get(sessionKey)?.status !== 'connected') {
                     updateSession(sessionKey, { status: 'error', message: 'Connection closed' });
                     try { fs.rmSync(authDir, { recursive: true, force: true }); } catch (e) {}
@@ -185,22 +176,9 @@ app.post('/pair', async (req, res) => {
             }
         });
 
-        // Fallback explicit request if QR doesn't trigger fast
-        setTimeout(async () => {
-            const current = sessions.get(sessionKey);
-            if (!current?.code && !state.creds.registered) {
-                try {
-                    const code = await sock.requestPairingCode(number);
-                    if (code) {
-                        updateSession(sessionKey, { status: 'awaiting_link', code });
-                    }
-                } catch (e) {}
-            }
-        }, 5000);
-
         res.json({ success: true, sessionKey });
     } catch (e) {
-        res.status(500).json({ success: false, error: e.message });
+        res.status(500).json({ error: e.message });
     } finally {
         release();
     }
