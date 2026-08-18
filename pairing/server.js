@@ -13,7 +13,7 @@ const {
 
 const app = express();
 const PORT = Number(process.env.PORT || 8000);
-const logger = pino({ level: 'info' }); // Enabled info logging for debugging
+const logger = pino({ level: 'info' });
 const pairingMutex = new Mutex();
 const sessions = new Map();
 
@@ -138,10 +138,10 @@ app.post('/pair', async (req, res) => {
             },
             printQRInTerminal: false,
             logger: logger,
-            browser: Browsers.ubuntu("Chrome"),
-            connectTimeoutMs: 60000,
-            defaultQueryTimeoutMs: 60000,
-            keepAliveIntervalMs: 15000,
+            browser: Browsers.macOS("Safari"),
+            connectTimeoutMs: 120000,
+            defaultQueryTimeoutMs: 120000,
+            keepAliveIntervalMs: 10000,
             emitOwnEvents: true,
             markOnlineOnConnect: false,
             syncFullHistory: false
@@ -170,12 +170,12 @@ app.post('/pair', async (req, res) => {
                         console.error(`Error requesting pairing code: ${e.message}`);
                         updateSession(sessionKey, { status: 'error', message: e.message || 'Failed to get code' });
                     }
-                }, 3000);
+                }, 5000); // 5s delay for Heroku stability
             }
 
             if (connection === 'open') {
                 const sessionId = createCompactSessionId();
-                await new Promise(r => setTimeout(r, 1000));
+                await new Promise(r => setTimeout(r, 2000));
                 
                 const registry = readSessionRegistry();
                 registry[sessionId] = {
@@ -198,7 +198,7 @@ app.post('/pair', async (req, res) => {
                 updateSession(sessionKey, { status: 'connected', sessionId });
                 setTimeout(() => {
                     try { sock.end(); fs.rmSync(authDir, { recursive: true, force: true }); } catch (e) {}
-                }, 10000);
+                }, 15000);
             }
 
             if (connection === 'close') {
