@@ -13,7 +13,7 @@ const {
 
 const app = express();
 const PORT = Number(process.env.PORT || 8000);
-const logger = pino({ level: 'silent' });
+const logger = pino({ level: 'info' }); // Enabled info logging for debugging
 const pairingMutex = new Mutex();
 const sessions = new Map();
 
@@ -138,7 +138,7 @@ app.post('/pair', async (req, res) => {
             },
             printQRInTerminal: false,
             logger: logger,
-            browser: Browsers.macOS("Desktop"),
+            browser: Browsers.ubuntu("Chrome"),
             connectTimeoutMs: 60000,
             defaultQueryTimeoutMs: 60000,
             keepAliveIntervalMs: 15000,
@@ -160,14 +160,17 @@ app.post('/pair', async (req, res) => {
                 codeRequested = true;
                 setTimeout(async () => {
                     try {
+                        console.log(`Requesting pairing code for ${number}...`);
                         const code = await sock.requestPairingCode(number);
                         if (code) {
+                            console.log(`Pairing code received: ${code}`);
                             updateSession(sessionKey, { status: 'awaiting_link', code });
                         }
                     } catch (e) {
+                        console.error(`Error requesting pairing code: ${e.message}`);
                         updateSession(sessionKey, { status: 'error', message: e.message || 'Failed to get code' });
                     }
-                }, 2000); // Reduced delay to 2 seconds for faster response
+                }, 3000);
             }
 
             if (connection === 'open') {
@@ -200,8 +203,9 @@ app.post('/pair', async (req, res) => {
 
             if (connection === 'close') {
                 const code = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.statusCode;
+                console.log(`Connection closed with code: ${code}`);
                 if (code !== DisconnectReason.loggedOut && sessions.get(sessionKey)?.status !== 'connected') {
-                    updateSession(sessionKey, { status: 'error', message: 'Connection closed' });
+                    updateSession(sessionKey, { status: 'error', message: `Connection closed (${code})` });
                     try { fs.rmSync(authDir, { recursive: true, force: true }); } catch (e) {}
                 }
             }
@@ -209,6 +213,7 @@ app.post('/pair', async (req, res) => {
 
         res.json({ success: true, sessionKey });
     } catch (e) {
+        console.error(`Internal server error: ${e.message}`);
         res.status(500).json({ error: e.message });
     } finally {
         release();
