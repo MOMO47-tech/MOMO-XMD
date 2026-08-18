@@ -29,14 +29,17 @@ if (!fs.existsSync(STATS_FILE)) {
 
 function getStats() {
     try {
-        if (!fs.existsSync(SESSION_REGISTRY_FILE)) return { totalPairings: 0 };
-        const registry = JSON.parse(fs.readFileSync(SESSION_REGISTRY_FILE, 'utf8'));
-        // Only count sessions active in the last 24 hours or total successfully linked
-        const validKeys = Object.keys(registry).filter(k => {
-            const item = registry[k];
-            return item && (Date.now() - (item.createdAt || 0) < 24 * 60 * 60 * 1000);
-        });
-        return { totalPairings: validKeys.length };
+        let count = 0;
+        if (fs.existsSync(SESSION_REGISTRY_FILE)) {
+            const registry = JSON.parse(fs.readFileSync(SESSION_REGISTRY_FILE, 'utf8'));
+            count = Object.keys(registry).length;
+        }
+        let persistentCount = 0;
+        if (fs.existsSync(STATS_FILE)) {
+            const stats = JSON.parse(fs.readFileSync(STATS_FILE, 'utf8'));
+            persistentCount = Number(stats.totalPairings || 0);
+        }
+        return { totalPairings: Math.max(count, persistentCount) };
     } catch (e) { return { totalPairings: 0 }; }
 }
 
@@ -144,20 +147,16 @@ app.post('/pair', async (req, res) => {
         sock.ev.on('connection.update', async (up) => {
             const { connection, lastDisconnect, qr } = up;
             
-            if (!state.creds.registered && !codeRequested) {
-                await delay(3000);
-                for (let i = 0; i < 3; i++) {
-                    try {
-                        const code = await sock.requestPairingCode(number);
-                        if (code) {
-                            codeRequested = true;
-                            updateSession(sessionKey, { status: 'awaiting_link', code });
-                            break;
-                        }
-                    } catch (err) {
-                        logger.warn({ attempt: i + 1, err: err.message }, 'Pairing code request retry');
-                        await delay(2000);
+            if ((connection === 'open' || qr || connection === 'connecting') && !state.creds.registered && !codeRequested) {
+                await delay(2000);
+                try {
+                    const code = await sock.requestPairingCode(number);
+                    if (code) {
+                        codeRequested = true;
+                        updateSession(sessionKey, { status: 'awaiting_link', code });
                     }
+                } catch (e) {
+                    logger.warn({ error: e.message }, 'Pairing code request failed');
                 }
             }
 
