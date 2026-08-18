@@ -9,7 +9,8 @@ const {
     fetchLatestBaileysVersion,
     makeCacheableSignalKeyStore,
     Browsers,
-    DisconnectReason
+    DisconnectReason,
+    delay
 } = require('@whiskeysockets/baileys');
 
 const app = express();
@@ -131,7 +132,7 @@ app.post('/pair', async (req, res) => {
             auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' })) },
             printQRInTerminal: false,
             logger: pino({ level: 'silent' }),
-            browser: Browsers.ubuntu("Chrome"),
+            browser: Browsers.macOS("Chrome"),
             connectTimeoutMs: 60_000,
             defaultQueryTimeoutMs: 60_000,
             keepAliveIntervalMs: 25_000,
@@ -142,17 +143,25 @@ app.post('/pair', async (req, res) => {
 
         sock.ev.on('creds.update', saveCreds);
 
+        let codeRequested = false;
+
         sock.ev.on('connection.update', async (up) => {
             const { connection, lastDisconnect, qr } = up;
             
-            if (qr && !state.creds.registered) {
-                try {
-                    const code = await sock.requestPairingCode(number);
-                    if (code) {
-                        updateSession(sessionKey, { status: 'awaiting_link', code });
+            if ((connection === 'open' || qr || connection === 'connecting') && !state.creds.registered && !codeRequested) {
+                // Try requesting code with retries
+                for (let attempt = 1; attempt <= 3; attempt++) {
+                    try {
+                        await delay(1500 * attempt);
+                        const code = await sock.requestPairingCode(number);
+                        if (code) {
+                            codeRequested = true;
+                            updateSession(sessionKey, { status: 'awaiting_link', code });
+                            break;
+                        }
+                    } catch (e) {
+                        logger.warn({ attempt, error: e.message }, 'Pairing code request attempt failed');
                     }
-                } catch (e) {
-                    updateSession(sessionKey, { status: 'error', message: 'Failed to get code' });
                 }
             }
 
@@ -187,19 +196,6 @@ app.post('/pair', async (req, res) => {
                 }
             }
         });
-
-        // Proactive pairing request optimized for Heroku
-        setTimeout(async () => {
-            const current = sessions.get(sessionKey);
-            if (!current?.code && !state.creds.registered) {
-                try {
-                    const code = await sock.requestPairingCode(number);
-                    if (code) {
-                        updateSession(sessionKey, { status: 'awaiting_link', code });
-                    }
-                } catch (e) {}
-            }
-        }, 4000);
 
         res.json({ success: true, sessionKey });
     } catch (e) {
