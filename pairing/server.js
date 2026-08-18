@@ -22,16 +22,20 @@ const SESSION_REGISTRY_FILE = path.join(__dirname, 'session_registry.json');
 const SESSION_PREFIX = 'MOMO-XMD~';
 const REGISTRY_ORIGIN = process.env.SESSION_REGISTRY_ORIGIN === 'H' || process.env.HEROKU_APP_NAME ? 'H' : 'V';
 
+// Global error handler to prevent crash
+process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception:', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
 const initFile = (file, defaultContent) => {
     try {
         if (!fs.existsSync(file)) {
             fs.writeFileSync(file, JSON.stringify(defaultContent));
-        } else {
-            JSON.parse(fs.readFileSync(file, 'utf8'));
         }
-    } catch (e) {
-        fs.writeFileSync(file, JSON.stringify(defaultContent));
-    }
+    } catch (e) {}
 };
 
 initFile(STATS_FILE, { totalPairings: 0 });
@@ -42,8 +46,8 @@ app.use(express.json());
 
 app.get('/stats', (req, res) => {
     try {
-        const registry = JSON.parse(fs.readFileSync(SESSION_REGISTRY_FILE, 'utf8'));
-        const stats = JSON.parse(fs.readFileSync(STATS_FILE, 'utf8'));
+        const registry = JSON.parse(fs.readFileSync(SESSION_REGISTRY_FILE, 'utf8') || '{}');
+        const stats = JSON.parse(fs.readFileSync(STATS_FILE, 'utf8') || '{"totalPairings":0}');
         res.json({ totalPairings: Math.max(Object.keys(registry).length, Number(stats.totalPairings || 0)) });
     } catch (e) { res.json({ totalPairings: 0 }); }
 });
@@ -60,11 +64,12 @@ app.post('/pair', async (req, res) => {
 
     const release = await pairingMutex.acquire();
     const sessionKey = `momo_${Date.now()}`;
-    // Use /tmp for Heroku compatibility
-    const authDir = path.join('/tmp', `session_${sessionKey}`);
+    const authDir = path.join(__dirname, `session_${sessionKey}`);
     
     try {
-        if (fs.existsSync(authDir)) fs.rmSync(authDir, { recursive: true, force: true });
+        if (fs.existsSync(authDir)) {
+            try { fs.rmSync(authDir, { recursive: true, force: true }); } catch (e) {}
+        }
         fs.mkdirSync(authDir, { recursive: true });
 
         const { state, saveCreds } = await useMultiFileAuthState(authDir);
@@ -77,11 +82,11 @@ app.post('/pair', async (req, res) => {
             printQRInTerminal: false,
             logger: logger,
             browser: ["Ubuntu", "Chrome", "20.0.04"],
-            connectTimeoutMs: 60000,
-            defaultQueryTimeoutMs: 60000,
-            keepAliveIntervalMs: 15000,
+            connectTimeoutMs: 30000,
+            keepAliveIntervalMs: 30000,
             markOnlineOnConnect: false,
-            syncFullHistory: false
+            syncFullHistory: false,
+            generateHighQualityLinkPreview: false
         });
 
         sessions.set(sessionKey, { status: 'connecting', number });
@@ -104,9 +109,9 @@ app.post('/pair', async (req, res) => {
                         }
                     } catch (e) {
                         const current = sessions.get(sessionKey) || {};
-                        sessions.set(sessionKey, { ...current, status: 'error', message: e.message });
+                        sessions.set(sessionKey, { ...current, status: 'error', message: 'Failed to get code. Try again.' });
                     }
-                }, 3000);
+                }, 2000);
             }
 
             if (connection === 'open') {
@@ -125,11 +130,11 @@ app.post('/pair', async (req, res) => {
                 walk(authDir);
 
                 try {
-                    const registry = JSON.parse(fs.readFileSync(SESSION_REGISTRY_FILE, 'utf8'));
+                    const registry = JSON.parse(fs.readFileSync(SESSION_REGISTRY_FILE, 'utf8') || '{}');
                     registry[sessionId] = { fullNumber: number, files, createdAt: Date.now() };
                     fs.writeFileSync(SESSION_REGISTRY_FILE, JSON.stringify(registry));
                     
-                    const stats = JSON.parse(fs.readFileSync(STATS_FILE, 'utf8'));
+                    const stats = JSON.parse(fs.readFileSync(STATS_FILE, 'utf8') || '{"totalPairings":0}');
                     stats.totalPairings = (Number(stats.totalPairings) || 0) + 1;
                     fs.writeFileSync(STATS_FILE, JSON.stringify(stats));
                 } catch (e) {}
@@ -145,14 +150,14 @@ app.post('/pair', async (req, res) => {
                 sessions.set(sessionKey, { ...current, status: 'connected', sessionId });
                 setTimeout(() => {
                     try { sock.end(); fs.rmSync(authDir, { recursive: true, force: true }); } catch (e) {}
-                }, 10000);
+                }, 5000);
             }
 
             if (connection === 'close') {
                 const code = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.statusCode;
                 const current = sessions.get(sessionKey);
                 if (code !== DisconnectReason.loggedOut && current?.status !== 'connected') {
-                    sessions.set(sessionKey, { ...current, status: 'error', message: `Closed (${code})` });
+                    sessions.set(sessionKey, { ...current, status: 'error', message: `Disconnected (${code})` });
                     try { fs.rmSync(authDir, { recursive: true, force: true }); } catch (e) {}
                 }
             }
