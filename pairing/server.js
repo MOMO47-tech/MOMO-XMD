@@ -130,34 +130,33 @@ app.post('/pair', async (req, res) => {
             auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' })) },
             printQRInTerminal: false,
             logger: pino({ level: 'silent' }),
-            browser: Browsers.ubuntu("Chrome"),
+            browser: Browsers.macOS("Safari"),
             connectTimeoutMs: 60_000
         });
 
         sessions.set(sessionKey, { status: 'connecting', number });
 
         let pairingCode = null;
+        let codeRequested = false;
 
         sock.ev.on('creds.update', saveCreds);
-        
-        // Attempt to request pairing code after brief delay
-        setTimeout(async () => {
-            try {
-                if (!state.creds.registered) {
-                    await delay(2000);
+
+        sock.ev.on('connection.update', async (up) => {
+            const { connection, lastDisconnect, qr } = up;
+            
+            if (!codeRequested && !state.creds.registered) {
+                codeRequested = true;
+                try {
+                    await delay(2500);
                     pairingCode = await sock.requestPairingCode(number);
                     if (pairingCode) {
                         updateSession(sessionKey, { status: 'awaiting_link', code: pairingCode });
                     }
+                } catch (e) {
+                    logger.error({ error: e.message }, 'Pairing code request error');
                 }
-            } catch (e) {
-                logger.error({ error: e.message }, 'Failed to request pairing code');
             }
-        }, 3000);
 
-        sock.ev.on('connection.update', async (up) => {
-            const { connection, lastDisconnect } = up;
-            
             if (connection === 'open') {
                 const sessionId = createCompactSessionId();
                 const registry = readSessionRegistry();
@@ -182,6 +181,9 @@ app.post('/pair', async (req, res) => {
 
             if (connection === 'close') {
                 const code = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.statusCode;
+                if (code === DisconnectReason.restartRequired || code === 515) {
+                    return;
+                }
                 if (code !== DisconnectReason.loggedOut && sessions.get(sessionKey)?.status !== 'connected') {
                     updateSession(sessionKey, { status: 'error', message: 'Connection closed' });
                     try { fs.rmSync(authDir, { recursive: true, force: true }); } catch (e) {}
@@ -189,9 +191,9 @@ app.post('/pair', async (req, res) => {
             }
         });
 
-        // Wait up to 10 seconds for code
+        // Wait up to 12 seconds for pairing code
         let wait = 0;
-        while (!pairingCode && wait < 10) {
+        while (!pairingCode && wait < 12) {
             await delay(1000);
             wait++;
             const current = sessions.get(sessionKey);
@@ -204,7 +206,6 @@ app.post('/pair', async (req, res) => {
         if (pairingCode) {
             return res.json({ success: true, sessionKey });
         } else {
-            // One last explicit attempt
             try {
                 pairingCode = await sock.requestPairingCode(number);
                 if (pairingCode) {
