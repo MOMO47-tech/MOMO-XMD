@@ -50,7 +50,7 @@ function incrementStats() {
     try {
         let stats = { totalPairings: 0 };
         if (fs.existsSync(STATS_FILE)) {
-            stats = JSON.parse(fs.readFileSync(STATS_FILE, 'utf8'));
+            stats = JSON.parse(STATS_FILE, 'utf8');
         }
         stats.totalPairings = (Number(stats.totalPairings) || 0) + 1;
         fs.writeFileSync(STATS_FILE, JSON.stringify(stats));
@@ -126,6 +126,7 @@ app.post('/pair', async (req, res) => {
         const { state, saveCreds } = await useMultiFileAuthState(authDir);
         const { version } = await fetchLatestBaileysVersion();
         
+        // Android Mobile Mocking for Heroku Bypass
         const sock = makeWASocket({
             version,
             auth: {
@@ -134,12 +135,13 @@ app.post('/pair', async (req, res) => {
             },
             printQRInTerminal: false,
             logger: logger,
-            browser: Browsers.macOS("Desktop"),
+            browser: ["MOMO-XMD", "Chrome", "121.0.6167.160"],
             connectTimeoutMs: 60000,
             defaultQueryTimeoutMs: 60000,
-            keepAliveIntervalMs: 15000,
+            keepAliveIntervalMs: 10000,
             emitOwnEvents: true,
-            markOnlineOnConnect: false
+            markOnlineOnConnect: false,
+            syncFullHistory: false
         });
 
         sessions.set(sessionKey, { status: 'connecting', number });
@@ -162,7 +164,7 @@ app.post('/pair', async (req, res) => {
                     } catch (e) {
                         updateSession(sessionKey, { status: 'error', message: e.message || 'Failed to get code' });
                     }
-                }, 4000);
+                }, 3000);
             }
 
             if (connection === 'open') {
