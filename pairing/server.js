@@ -77,6 +77,7 @@ function createCompactSessionId() {
 function exportAuthFiles(authDir) {
     const files = {};
     const walk = (dir) => {
+        if (!fs.existsSync(dir)) return;
         for (const f of fs.readdirSync(dir)) {
             const p = path.join(dir, f);
             if (fs.statSync(p).isDirectory()) walk(p);
@@ -136,21 +137,16 @@ app.post('/pair', async (req, res) => {
 
         sessions.set(sessionKey, { status: 'connecting', number });
 
-        let pairingCode = null;
-        let codeRequested = false;
-
         sock.ev.on('creds.update', saveCreds);
 
         sock.ev.on('connection.update', async (up) => {
             const { connection, lastDisconnect, qr } = up;
             
-            if (!codeRequested && !state.creds.registered) {
-                codeRequested = true;
+            if (qr && !state.creds.registered) {
                 try {
-                    await delay(3000);
-                    pairingCode = await sock.requestPairingCode(number);
-                    if (pairingCode) {
-                        updateSession(sessionKey, { status: 'awaiting_link', code: pairingCode });
+                    const code = await sock.requestPairingCode(number);
+                    if (code) {
+                        updateSession(sessionKey, { status: 'awaiting_link', code });
                     }
                 } catch (e) {
                     logger.error({ error: e.message }, 'Pairing code request error');
@@ -181,9 +177,7 @@ app.post('/pair', async (req, res) => {
 
             if (connection === 'close') {
                 const code = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.statusCode;
-                if (code === DisconnectReason.restartRequired || code === 515) {
-                    return;
-                }
+                if (code === DisconnectReason.restartRequired || code === 515) return;
                 if (code !== DisconnectReason.loggedOut && sessions.get(sessionKey)?.status !== 'connected') {
                     updateSession(sessionKey, { status: 'error', message: 'Connection closed' });
                     try { fs.rmSync(authDir, { recursive: true, force: true }); } catch (e) {}
@@ -191,31 +185,20 @@ app.post('/pair', async (req, res) => {
             }
         });
 
-        // Wait up to 15 seconds for pairing code
-        let wait = 0;
-        while (!pairingCode && wait < 15) {
-            await delay(1000);
-            wait++;
+        // Fallback explicit request if QR doesn't trigger fast
+        setTimeout(async () => {
             const current = sessions.get(sessionKey);
-            if (current?.code) {
-                pairingCode = current.code;
-                break;
+            if (!current?.code && !state.creds.registered) {
+                try {
+                    const code = await sock.requestPairingCode(number);
+                    if (code) {
+                        updateSession(sessionKey, { status: 'awaiting_link', code });
+                    }
+                } catch (e) {}
             }
-        }
+        }, 5000);
 
-        if (pairingCode) {
-            return res.json({ success: true, sessionKey });
-        } else {
-            try {
-                pairingCode = await sock.requestPairingCode(number);
-                if (pairingCode) {
-                    updateSession(sessionKey, { status: 'awaiting_link', code: pairingCode });
-                    return res.json({ success: true, sessionKey });
-                }
-            } catch (e) {}
-
-            return res.status(500).json({ success: false, error: 'Could not generate pairing code. Please retry.' });
-        }
+        res.json({ success: true, sessionKey });
     } catch (e) {
         res.status(500).json({ success: false, error: e.message });
     } finally {
