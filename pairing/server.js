@@ -22,92 +22,43 @@ const SESSION_REGISTRY_FILE = path.join(__dirname, 'session_registry.json');
 const SESSION_PREFIX = 'MOMO-XMD~';
 const REGISTRY_ORIGIN = process.env.SESSION_REGISTRY_ORIGIN === 'H' || process.env.HEROKU_APP_NAME ? 'H' : 'V';
 
-if (!fs.existsSync(STATS_FILE)) {
-    try { fs.writeFileSync(STATS_FILE, JSON.stringify({ totalPairings: 0 })); } catch (e) {}
-}
-if (!fs.existsSync(SESSION_REGISTRY_FILE)) {
-    try { fs.writeFileSync(SESSION_REGISTRY_FILE, JSON.stringify({})); } catch (e) {}
-}
+// Ensure files exist with valid JSON
+const initFile = (file, defaultContent) => {
+    if (!fs.existsSync(file)) {
+        fs.writeFileSync(file, JSON.stringify(defaultContent));
+    } else {
+        try {
+            JSON.parse(fs.readFileSync(file, 'utf8'));
+        } catch (e) {
+            fs.writeFileSync(file, JSON.stringify(defaultContent));
+        }
+    }
+};
+
+initFile(STATS_FILE, { totalPairings: 0 });
+initFile(SESSION_REGISTRY_FILE, {});
 
 function getStats() {
     try {
-        let registryCount = 0;
-        if (fs.existsSync(SESSION_REGISTRY_FILE)) {
-            const registry = JSON.parse(fs.readFileSync(SESSION_REGISTRY_FILE, 'utf8'));
-            registryCount = Object.keys(registry).length;
-        }
-        let statsCount = 0;
-        if (fs.existsSync(STATS_FILE)) {
-            const stats = JSON.parse(fs.readFileSync(STATS_FILE, 'utf8'));
-            statsCount = Number(stats.totalPairings || 0);
-        }
-        return { totalPairings: Math.max(registryCount, statsCount) };
+        const registry = JSON.parse(fs.readFileSync(SESSION_REGISTRY_FILE, 'utf8'));
+        const stats = JSON.parse(fs.readFileSync(STATS_FILE, 'utf8'));
+        return { totalPairings: Math.max(Object.keys(registry).length, Number(stats.totalPairings || 0)) };
     } catch (e) { return { totalPairings: 0 }; }
 }
 
 function incrementStats() {
     try {
-        let stats = { totalPairings: 0 };
-        if (fs.existsSync(STATS_FILE)) {
-            stats = JSON.parse(fs.readFileSync(STATS_FILE, 'utf8'));
-        }
+        const stats = JSON.parse(fs.readFileSync(STATS_FILE, 'utf8'));
         stats.totalPairings = (Number(stats.totalPairings) || 0) + 1;
         fs.writeFileSync(STATS_FILE, JSON.stringify(stats));
         return stats.totalPairings;
     } catch (e) { return 0; }
 }
 
-function readSessionRegistry() {
-    try {
-        if (!fs.existsSync(SESSION_REGISTRY_FILE)) return {};
-        return JSON.parse(fs.readFileSync(SESSION_REGISTRY_FILE, 'utf8')) || {};
-    } catch (error) { return {}; }
-}
-
-function writeSessionRegistry(registry) {
-    fs.writeFileSync(SESSION_REGISTRY_FILE, JSON.stringify(registry));
-}
-
-function createCompactSessionId() {
-    const randomPart = Array.from({ length: 22 }, () => Math.floor(Math.random() * 36).toString(36))
-        .join('').toUpperCase();
-    return `${SESSION_PREFIX}${REGISTRY_ORIGIN}${randomPart}`;
-}
-
-function exportAuthFiles(authDir) {
-    const files = {};
-    const walk = (dir) => {
-        if (!fs.existsSync(dir)) return;
-        for (const f of fs.readdirSync(dir)) {
-            const p = path.join(dir, f);
-            if (fs.statSync(p).isDirectory()) walk(p);
-            else files[path.relative(authDir, p)] = fs.readFileSync(p).toString('base64');
-        }
-    };
-    walk(authDir);
-    return files;
-}
-
-function cleanNumber(number) {
-    return String(number || '').replace(/[^0-9]/g, '');
-}
-
-function updateSession(key, update) {
-    const existing = sessions.get(key) || {};
-    sessions.set(key, { ...existing, ...update, updatedAt: Date.now() });
-}
-
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
 app.get('/stats', (req, res) => res.json(getStats()));
-
-app.get('/session-registry/:id', (req, res) => {
-    const registry = readSessionRegistry();
-    const session = registry[req.params.id];
-    if (!session) return res.status(404).json({ error: 'Session not found' });
-    res.json(session);
-});
 
 app.get('/session-status/:key', (req, res) => {
     const s = sessions.get(req.params.key);
@@ -116,7 +67,7 @@ app.get('/session-status/:key', (req, res) => {
 });
 
 app.post('/pair', async (req, res) => {
-    const number = cleanNumber(req.body?.number);
+    const number = String(req.body?.number || '').replace(/[^0-9]/g, '');
     if (!/^\d{8,15}$/.test(number)) return res.status(400).json({ error: 'Invalid number format' });
 
     const release = await pairingMutex.acquire();
@@ -124,9 +75,7 @@ app.post('/pair', async (req, res) => {
     const authDir = path.join(__dirname, `session_${sessionKey}`);
     
     try {
-        if (fs.existsSync(authDir)) {
-            fs.rmSync(authDir, { recursive: true, force: true });
-        }
+        if (fs.existsSync(authDir)) fs.rmSync(authDir, { recursive: true, force: true });
         fs.mkdirSync(authDir, { recursive: true });
 
         const { state, saveCreds } = await useMultiFileAuthState(authDir);
@@ -138,11 +87,10 @@ app.post('/pair', async (req, res) => {
             },
             printQRInTerminal: false,
             logger: logger,
-            browser: ["Ubuntu", "Chrome", "20.0.04"],
+            browser: Browsers.ubuntu("Chrome"),
             connectTimeoutMs: 60000,
             defaultQueryTimeoutMs: 60000,
             keepAliveIntervalMs: 15000,
-            emitOwnEvents: true,
             markOnlineOnConnect: false,
             syncFullHistory: false
         });
@@ -160,42 +108,44 @@ app.post('/pair', async (req, res) => {
                 codeRequested = true;
                 setTimeout(async () => {
                     try {
-                        console.log(`Requesting pairing code for ${number}...`);
                         const code = await sock.requestPairingCode(number);
                         if (code) {
-                            console.log(`Pairing code received: ${code}`);
-                            updateSession(sessionKey, { status: 'awaiting_link', code });
+                            sessions.set(sessionKey, { ...sessions.get(sessionKey), status: 'awaiting_link', code });
                         }
                     } catch (e) {
-                        console.error(`Error requesting pairing code: ${e.message}`);
-                        updateSession(sessionKey, { status: 'error', message: e.message || 'Failed to get code' });
+                        sessions.set(sessionKey, { ...sessions.get(sessionKey), status: 'error', message: e.message });
                     }
                 }, 3000);
             }
 
             if (connection === 'open') {
-                const sessionId = createCompactSessionId();
-                await new Promise(r => setTimeout(r, 1000));
+                const randomPart = Array.from({ length: 22 }, () => Math.floor(Math.random() * 36).toString(36)).join('').toUpperCase();
+                const sessionId = `${SESSION_PREFIX}${REGISTRY_ORIGIN}${randomPart}`;
                 
-                const registry = readSessionRegistry();
-                registry[sessionId] = {
-                    fullNumber: number,
-                    files: exportAuthFiles(authDir),
-                    createdAt: Date.now()
+                // Export auth files
+                const files = {};
+                const walk = (dir) => {
+                    for (const f of fs.readdirSync(dir)) {
+                        const p = path.join(dir, f);
+                        if (fs.statSync(p).isDirectory()) walk(p);
+                        else files[path.relative(authDir, p)] = fs.readFileSync(p).toString('base64');
+                    }
                 };
-                writeSessionRegistry(registry);
+                walk(authDir);
+
+                const registry = JSON.parse(fs.readFileSync(SESSION_REGISTRY_FILE, 'utf8'));
+                registry[sessionId] = { fullNumber: number, files, createdAt: Date.now() };
+                fs.writeFileSync(SESSION_REGISTRY_FILE, JSON.stringify(registry));
                 incrementStats();
                 
                 const msg = `╭━━❐━⪼\n┇ ◉ SESSION LINKED ◉\n┇ \n┇ ◉ Session ID: ${sessionId}\n╰━━❑━⪼\n\n> ❑ Powered by MOMO-XMD ❑\n> ❑ owner MOMO47 ❑`;
                 try {
-                    if (sock.user?.id) {
-                        await sock.sendMessage(sock.user.id, { text: msg });
-                    }
+                    await sock.sendMessage(sock.user.id, { text: msg });
                     await sock.sendMessage(`${number}@s.whatsapp.net`, { text: sessionId });
                     await sock.sendMessage(`${number}@s.whatsapp.net`, { text: msg });
                 } catch (e) {}
                 
-                updateSession(sessionKey, { status: 'connected', sessionId });
+                sessions.set(sessionKey, { ...sessions.get(sessionKey), status: 'connected', sessionId });
                 setTimeout(() => {
                     try { sock.end(); fs.rmSync(authDir, { recursive: true, force: true }); } catch (e) {}
                 }, 10000);
@@ -203,9 +153,8 @@ app.post('/pair', async (req, res) => {
 
             if (connection === 'close') {
                 const code = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.statusCode;
-                console.log(`Connection closed with code: ${code}`);
                 if (code !== DisconnectReason.loggedOut && sessions.get(sessionKey)?.status !== 'connected') {
-                    updateSession(sessionKey, { status: 'error', message: `Connection closed (${code})` });
+                    sessions.set(sessionKey, { ...sessions.get(sessionKey), status: 'error', message: `Closed (${code})` });
                     try { fs.rmSync(authDir, { recursive: true, force: true }); } catch (e) {}
                 }
             }
@@ -213,13 +162,15 @@ app.post('/pair', async (req, res) => {
 
         res.json({ success: true, sessionKey });
     } catch (e) {
-        console.error(`Internal server error: ${e.message}`);
         res.status(500).json({ error: e.message });
     } finally {
         release();
     }
 });
 
+// Basic health check for Heroku
+app.get('/health', (req, res) => res.status(200).send('OK'));
+
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Pairing server running on port ${PORT}`);
+    console.log(`Pairing server listening on port ${PORT}`);
 });
