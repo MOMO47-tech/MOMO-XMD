@@ -131,7 +131,7 @@ app.post('/pair', async (req, res) => {
             },
             printQRInTerminal: false,
             logger: logger,
-            browser: Browsers.macOS("Chrome"),
+            browser: Browsers.ubuntu("Chrome"),
             connectTimeoutMs: 60000,
             defaultQueryTimeoutMs: 60000,
             keepAliveIntervalMs: 10000,
