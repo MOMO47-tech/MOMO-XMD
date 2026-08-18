@@ -110,7 +110,7 @@ app.get('/session-status/:key', (req, res) => {
 
 app.post('/pair', async (req, res) => {
     const number = cleanNumber(req.body?.number);
-    if (!/^\d{8,15}$/.test(number)) return res.status(400).json({ error: 'Invalid number' });
+    if (!/^\d{8,15}$/.test(number)) return res.status(400).json({ success: false, error: 'Invalid number' });
 
     const release = await pairingMutex.acquire();
     const sessionKey = `momo_${Date.now()}`;
@@ -120,29 +120,29 @@ app.post('/pair', async (req, res) => {
         fs.mkdirSync(authDir, { recursive: true });
         const { state, saveCreds } = await useMultiFileAuthState(authDir);
         
+        let version = [2, 3000, 1015901307];
+        try {
+            const latest = await fetchLatestBaileysVersion();
+            if (Array.isArray(latest?.version)) version = latest.version;
+        } catch (e) {}
+
         const sock = makeWASocket({
+            version,
             auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' })) },
             printQRInTerminal: false,
             logger: pino({ level: 'silent' }),
-            browser: Browsers.ubuntu("Chrome")
+            browser: Browsers.macOS("Chrome"),
+            connectTimeoutMs: 60_000
         });
 
         sessions.set(sessionKey, { status: 'connecting', number });
 
+        let pairingCode = null;
         sock.ev.on('creds.update', saveCreds);
 
         sock.ev.on('connection.update', async (up) => {
-            const { connection, lastDisconnect, qr } = up;
+            const { connection, lastDisconnect } = up;
             
-            if (qr && !state.creds.registered) {
-                try {
-                    const code = await sock.requestPairingCode(number);
-                    updateSession(sessionKey, { status: 'awaiting_link', code });
-                } catch (e) {
-                    updateSession(sessionKey, { status: 'error', message: 'Failed to get code' });
-                }
-            }
-
             if (connection === 'open') {
                 const sessionId = createCompactSessionId();
                 const registry = readSessionRegistry();
@@ -156,19 +156,18 @@ app.post('/pair', async (req, res) => {
                 
                 const msg = `╭━━❐━⪼\n┇ ◉ SESSION LINKED ◉\n┇ \n┇ ◉ Session ID: ${sessionId}\n╰━━❑━⪼\n\n> Powered by MOMO-XMD\n> owner MOMO47`;
                 try {
-                    await sock.sendMessage(sock.user.id, { text: msg });
-                    await sock.sendMessage(`${number}@s.whatsapp.net`, { text: sessionId });
                     await sock.sendMessage(`${number}@s.whatsapp.net`, { text: msg });
                 } catch (e) {}
                 
                 updateSession(sessionKey, { status: 'connected', sessionId });
                 setTimeout(() => {
                     try { sock.end(); fs.rmSync(authDir, { recursive: true, force: true }); } catch (e) {}
-                }, 10000);
+                }, 15000);
             }
 
             if (connection === 'close') {
                 const code = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.statusCode;
+                if (code === DisconnectReason.restartRequired || code === 515) return;
                 if (code !== DisconnectReason.loggedOut && sessions.get(sessionKey)?.status !== 'connected') {
                     updateSession(sessionKey, { status: 'error', message: 'Connection closed' });
                     try { fs.rmSync(authDir, { recursive: true, force: true }); } catch (e) {}
@@ -176,9 +175,47 @@ app.post('/pair', async (req, res) => {
             }
         });
 
-        res.json({ success: true, sessionKey });
+        // Aggressive direct pairing request
+        try {
+            await delay(2000);
+            if (!state.creds.registered) {
+                pairingCode = await sock.requestPairingCode(number);
+                if (pairingCode) {
+                    updateSession(sessionKey, { status: 'awaiting_link', code: pairingCode });
+                }
+            }
+        } catch (e) {
+            logger.error({ error: e.message }, 'Direct pairing request failed, will retry via event');
+        }
+
+        // If direct failed, wait up to 10s for connection or fallback
+        let wait = 0;
+        while (!pairingCode && wait < 10) {
+            await delay(1000);
+            wait++;
+            const current = sessions.get(sessionKey);
+            if (current?.code) {
+                pairingCode = current.code;
+                break;
+            }
+        }
+
+        if (!pairingCode && !state.creds.registered) {
+            try {
+                pairingCode = await sock.requestPairingCode(number);
+                if (pairingCode) {
+                    updateSession(sessionKey, { status: 'awaiting_link', code: pairingCode });
+                }
+            } catch (e) {}
+        }
+
+        if (pairingCode) {
+            return res.json({ success: true, sessionKey });
+        } else {
+            return res.status(500).json({ success: false, error: 'Could not generate pairing code. Please retry.' });
+        }
     } catch (e) {
-        res.status(500).json({ error: e.message });
+        res.status(500).json({ success: false, error: e.message });
     } finally {
         release();
     }
