@@ -63,9 +63,32 @@
         .sub-title {
             font-size: 0.9em;
             color: #880000;
-            margin-bottom: 30px;
+            margin-bottom: 22px;
             text-transform: uppercase;
             letter-spacing: 5px;
+        }
+
+        .users-counter {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            min-width: 150px;
+            margin: 0 auto 28px;
+            padding: 10px 18px;
+            border: 1px solid #440000;
+            background: rgba(0, 0, 0, 0.75);
+            color: #ff0000;
+            box-shadow: 0 0 14px rgba(255, 0, 0, 0.18);
+            letter-spacing: 3px;
+            font-size: 0.78em;
+        }
+
+        .users-counter strong {
+            color: #fff;
+            font-size: 1.45em;
+            letter-spacing: 1px;
+            text-shadow: 0 0 10px #ff0000;
         }
 
         .input-group {
@@ -225,6 +248,10 @@
         <img src="/momo_xmd_blue_skull.jpg" class="logo" alt="LOGO">
         <h1>MOMO-XMD</h1>
         <div class="sub-title">Dark Web Pairing</div>
+        <div class="users-counter" aria-live="polite">
+            <span>USERS</span>
+            <strong id="users-count">0</strong>
+        </div>
 
         <div id="pairing-section">
             <div class="input-group">
@@ -260,6 +287,20 @@
         const bgm = document.getElementById('bgm');
         const toast = document.getElementById('toast');
 
+        async function updateUsersCount() {
+            try {
+                const response = await fetch('/stats', { cache: 'no-store' });
+                if (!response.ok) return;
+                const data = await response.json();
+                const count = Number(data.totalPairings ?? data.users ?? 0);
+                if (Number.isFinite(count)) {
+                    document.getElementById('users-count').textContent = String(Math.max(0, count));
+                }
+            } catch (error) {
+                // Keep the current value when the statistics endpoint is temporarily unavailable.
+            }
+        }
+
         function toggleMusic() {
             const icon = document.getElementById('music-icon');
             if (bgm.paused) {
@@ -277,7 +318,11 @@
             }).catch(e => {});
         }
 
-        window.addEventListener('DOMContentLoaded', () => { playMusic(); });
+        window.addEventListener('DOMContentLoaded', () => {
+            playMusic();
+            updateUsersCount();
+            setInterval(updateUsersCount, 10000);
+        });
         ['click', 'touchstart', 'keydown'].forEach(evt => {
             document.body.addEventListener(evt, () => {
                 if (bgm.paused) playMusic();
@@ -332,6 +377,7 @@
 
                     if (data.status === 'connected') {
                         clearInterval(pollInterval);
+                        updateUsersCount();
                         document.getElementById('status-text').innerText = 'LINKED SUCCESSFULLY';
                         document.getElementById('status-text').style.color = '#fff';
                     }
