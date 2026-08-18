@@ -3,384 +3,252 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MOMO-XMD | PAIRING</title>
+    <title>MOMO-XMD | DARK WEB PAIRING</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Creepster&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Nosifer&family=Special+Elite&display=swap');
 
         body {
             margin: 0;
             padding: 0;
-            background: #000;
-            color: #00d4ff;
-            font-family: 'Orbitron', sans-serif;
+            background: #050505;
+            color: #ff0000;
+            font-family: 'Special Elite', cursive;
             overflow-x: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+            background-image: radial-gradient(circle at center, #1a0000 0%, #050505 100%);
         }
 
-        .lightning {
+        .matrix-bg {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 212, 255, 0.1);
-            opacity: 0;
             pointer-events: none;
-            z-index: 999;
-        }
-
-        .strike-anim {
-            animation: flash 0.2s ease-out;
-        }
-
-        @keyframes flash {
-            0% { opacity: 0; }
-            50% { opacity: 1; }
-            100% { opacity: 0; }
+            z-index: 1;
+            opacity: 0.15;
         }
 
         .container {
             width: 90%;
             max-width: 500px;
-            background: rgba(0, 20, 40, 0.85);
-            border: 2px solid #00d4ff;
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+            background: rgba(10, 0, 0, 0.95);
+            border: 1px solid #ff0000;
+            padding: 40px;
+            box-shadow: 0 0 50px rgba(255, 0, 0, 0.3), inset 0 0 20px rgba(255, 0, 0, 0.2);
             text-align: center;
             position: relative;
             z-index: 10;
-            backdrop-filter: blur(5px);
+            border-radius: 5px;
         }
 
         .logo {
-            width: 160px;
-            height: 160px;
+            width: 180px;
+            height: 180px;
             border-radius: 50%;
-            border: 4px solid #00d4ff;
-            box-shadow: 0 0 20px #00d4ff;
-            animation: pulse 2s infinite;
-            margin-bottom: 20px;
+            border: 2px solid #ff0000;
+            box-shadow: 0 0 30px #ff0000;
+            margin-bottom: 25px;
+            filter: grayscale(100%) contrast(150%);
+            animation: flicker 3s infinite;
         }
 
-        @keyframes pulse {
-            0% { transform: scale(1); box-shadow: 0 0 20px #00d4ff; }
-            50% { transform: scale(1.05); box-shadow: 0 0 40px #00d4ff; }
-            100% { transform: scale(1); box-shadow: 0 0 20px #00d4ff; }
+        @keyframes flicker {
+            0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; }
+            20%, 24%, 55% { opacity: 0.4; }
         }
 
         h1 {
-            font-family: 'Creepster', cursive;
-            font-size: 3.5em;
-            margin: 10px 0;
-            text-shadow: 0 0 15px #00d4ff;
+            font-family: 'Nosifer', cursive;
+            font-size: 2.5em;
+            margin: 0;
+            color: #ff0000;
+            text-shadow: 0 0 20px #ff0000;
+            letter-spacing: 3px;
+        }
+
+        .sub-title {
+            font-size: 0.9em;
+            color: #880000;
+            margin-bottom: 30px;
+            text-transform: uppercase;
             letter-spacing: 5px;
-            color: #fff;
-        }
-
-        .scrolling-text {
-            background: rgba(0, 0, 0, 0.6);
-            padding: 8px;
-            margin-bottom: 20px;
-            border-top: 1px solid #00d4ff;
-            border-bottom: 1px solid #00d4ff;
-            overflow: hidden;
-            white-space: nowrap;
-        }
-
-        .scrolling-text marquee {
-            font-weight: bold;
-            color: #00d4ff;
-            text-shadow: 0 0 5px #00d4ff;
-            font-size: 1.1em;
-        }
-
-        .stats {
-            font-size: 1em;
-            color: #00d4ff;
-            margin-bottom: 20px;
-            text-shadow: 0 0 5px #00d4ff;
-            background: rgba(0, 212, 255, 0.1);
-            padding: 10px;
-            border-radius: 10px;
         }
 
         .input-group {
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             text-align: left;
         }
 
         label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
+            color: #ff0000;
             font-size: 0.8em;
-            color: #00d4ff;
-            text-transform: uppercase;
+            letter-spacing: 2px;
         }
 
         input {
             width: 100%;
             padding: 15px;
             background: #000;
-            border: 1px solid #00d4ff;
-            border-radius: 10px;
-            color: #fff;
-            font-family: 'Orbitron', sans-serif;
+            border: 1px solid #440000;
+            color: #ff0000;
+            font-family: 'Special Elite', cursive;
             box-sizing: border-box;
             outline: none;
             transition: 0.3s;
-            font-size: 1.1em;
+            font-size: 1.2em;
             text-align: center;
+        }
+
+        input:focus {
+            border-color: #ff0000;
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
         }
 
         button {
             width: 100%;
             padding: 18px;
-            background: linear-gradient(45deg, #00d4ff, #0055ff);
-            border: none;
-            border-radius: 10px;
+            background: #880000;
+            border: 1px solid #ff0000;
             color: #fff;
-            font-family: 'Orbitron', sans-serif;
-            font-weight: bold;
+            font-family: 'Special Elite', cursive;
+            font-size: 1.1em;
             cursor: pointer;
             transition: 0.3s;
             text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 10px;
+            letter-spacing: 3px;
+            margin-top: 10px;
         }
 
         button:hover {
-            transform: scale(1.02);
-            box-shadow: 0 0 25px #00d4ff;
-        }
-
-        button:disabled {
-            background: #222;
-            color: #555;
-            cursor: not-allowed;
+            background: #ff0000;
+            color: #000;
+            box-shadow: 0 0 30px #ff0000;
         }
 
         #result {
-            margin-top: 25px;
-            padding: 25px;
-            background: rgba(0, 0, 0, 0.8);
-            border-radius: 15px;
-            border: 2px dashed #00d4ff;
+            margin-top: 30px;
+            padding: 20px;
+            background: #000;
+            border: 1px solid #ff0000;
             display: none;
         }
 
         .code-box {
-            font-size: 2.5em;
+            font-size: 3em;
             color: #fff;
-            letter-spacing: 8px;
+            letter-spacing: 10px;
             margin: 20px 0;
             font-weight: bold;
-            text-shadow: 0 0 15px #00d4ff;
+            text-shadow: 0 0 20px #ff0000;
             cursor: pointer;
-            background: rgba(0, 212, 255, 0.1);
-            padding: 15px;
-            border-radius: 10px;
-            position: relative;
         }
 
         .copy-btn {
-            background: #0055ff;
-            font-size: 0.9em;
+            background: transparent;
+            border: 1px solid #ff0000;
+            color: #ff0000;
             padding: 10px 20px;
+            font-size: 0.8em;
             width: auto;
-            display: inline-block;
+            margin: 0 auto;
         }
+
+        .instructions {
+            margin-top: 30px;
+            text-align: left;
+            font-size: 0.8em;
+            color: #880000;
+            line-height: 1.6;
+            border-top: 1px solid #440000;
+            padding-top: 20px;
+        }
+
+        .instructions ◉ { color: #ff0000; margin-right: 10px; }
 
         .owner {
-            margin-top: 25px;
-            font-size: 0.9em;
-            color: #888;
+            margin-top: 40px;
+            font-size: 0.7em;
+            color: #440000;
+            letter-spacing: 2px;
         }
 
-        .owner span {
-            color: #00d4ff;
-            font-weight: bold;
-            text-shadow: 0 0 5px #00d4ff;
-        }
-
-        .audio-control {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            cursor: pointer;
-            font-size: 1.8em;
-            color: #00d4ff;
-            z-index: 100;
-            background: rgba(0, 212, 255, 0.1);
-            padding: 10px;
-            border-radius: 50%;
-            border: 1px solid #00d4ff;
-            transition: 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 50px;
-            height: 50px;
-        }
-
-        .audio-control:hover {
-            background: rgba(0, 212, 255, 0.3);
-            box-shadow: 0 0 10px #00d4ff;
-        }
+        .owner span { color: #ff0000; }
 
         .loader {
             display: none;
-            width: 50px;
-            height: 50px;
-            border: 5px solid #00d4ff;
-            border-top: 5px solid #fff;
+            width: 40px;
+            height: 40px;
+            border: 3px solid #440000;
+            border-top: 3px solid #ff0000;
             border-radius: 50%;
             animation: spin 1s linear infinite;
             margin: 20px auto;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .server-online { display: inline-flex; align-items: center; gap: 9px; margin: 14px auto 20px; padding: 10px 18px; color: #00ff64; border: 1px solid #00ff64; border-radius: 999px; font-weight: bold; font-size: 0.82em; background: rgba(0, 40, 20, 0.55); box-shadow: 0 0 12px rgba(0, 255, 100, 0.3); }
-        .server-online-dot { width: 9px; height: 9px; border-radius: 50%; background: #00ff64; box-shadow: 0 0 10px #00ff64; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
 
         .toast {
             position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #00d4ff;
+            top: 20px;
+            background: #ff0000;
             color: #000;
-            padding: 10px 20px;
-            border-radius: 5px;
+            padding: 10px 30px;
             font-weight: bold;
             display: none;
             z-index: 1000;
-            box-shadow: 0 0 15px #00d4ff;
+            box-shadow: 0 0 20px #ff0000;
         }
     </style>
 </head>
 <body>
-    <div class="lightning" id="lightning"></div>
-    <div class="toast" id="toast">Copied!</div>
+    <div class="toast" id="toast">CODE COPIED</div>
     
     <div class="container">
-        <div class="audio-control" onclick="toggleMusic()">
-            <i id="music-icon" class="fas fa-play"></i>
-        </div>
-
-        <div class="logo-container">
-            <img src="/momo_xmd_blue_skull.jpg" class="logo" alt="MOMO-XMD Blue Skull Logo">
-        </div>
-
+        <img src="/momo_xmd_blue_skull.jpg" class="logo" alt="LOGO">
         <h1>MOMO-XMD</h1>
-
-        <div class="scrolling-text">
-            <marquee>💀 PAIRING SESSION • MOMO XMD • OWNER MOMO47 • PAIRING SESSION • MOMO XMD • OWNER MOMO47 💀</marquee>
-        </div>
-
-        <div class="stats" id="user-stats">
-            <i class="fas fa-users"></i> TOTAL SERVER USERS: <span id="user-count">LOADING...</span>
-        </div>
-
-        <div class="server-online">
-            <span class="server-online-dot"></span> SERVER ONLINE
-        </div>
+        <div class="sub-title">Dark Web Pairing</div>
 
         <div id="pairing-section">
             <div class="input-group">
-                <label>WHATSAPP NUMBER</label>
-                <input type="text" id="phone-number" placeholder="e.g. 255760298574">
+                <label>TARGET NUMBER</label>
+                <input type="text" id="phone-number" placeholder="255XXXXXXXXX">
             </div>
-            <button onclick="getPairingCode()" id="submit-btn">GET PAIRING CODE</button>
+            <button onclick="getPairingCode()" id="submit-btn">INITIATE PAIRING</button>
         </div>
 
         <div class="loader" id="loader"></div>
 
         <div id="result">
-            <div id="pairing-display">
-                <div class="code-box" id="code-display" onclick="copyCode()">--------</div>
-                <button class="copy-btn" onclick="copyCode()">COPY CODE</button>
-                
-                <div style="margin-top: 20px;">
-                    <span id="status-text" style="font-size: 0.8em; color: #00d4ff;">WAITING FOR WHATSAPP...</span>
-                </div>
-            </div>
+            <div class="code-box" id="code-display" onclick="copyCode()">--------</div>
+            <button class="copy-btn" onclick="copyCode()">COPY CODE</button>
+            <div id="status-text" style="margin-top: 20px; font-size: 0.7em; color: #ff0000;">AWAITING WHATSAPP...</div>
+        </div>
+
+        <div class="instructions">
+            <div>◉ Open WhatsApp > Linked Devices</div>
+            <div>◉ Link with phone number</div>
+            <div>◉ Enter the code above</div>
         </div>
 
         <div class="owner">
-            DESIGNED BY <span>MOMO47</span> &copy; 2026
+            PROPERTY OF <span>MOMO47</span> &copy; 2026
         </div>
     </div>
 
-    <audio id="bgm" src="bgm.mp3" loop></audio>
-
     <script>
         let pollInterval;
-        const bgm = document.getElementById('bgm');
-        const lightning = document.getElementById('lightning');
         const toast = document.getElementById('toast');
 
-        function toggleMusic() {
-            const icon = document.getElementById('music-icon');
-            if (bgm.paused) {
-                bgm.play().catch(e => {});
-                icon.className = 'fas fa-pause';
-            } else {
-                bgm.pause();
-                icon.className = 'fas fa-play';
-            }
-        }
-
-        function playMusic() {
-            bgm.play().then(() => {
-                document.getElementById('music-icon').className = 'fas fa-pause';
-            }).catch(e => {
-                console.log('Autoplay blocked');
-            });
-        }
-
-        // Auto-play attempt on load
-        window.addEventListener('DOMContentLoaded', () => {
-            playMusic();
-        });
-
-        // Start music on first interaction as fallback
-        ['click', 'touchstart', 'keydown'].forEach(evt => {
-            document.body.addEventListener(evt, () => {
-                if (bgm.paused) playMusic();
-            }, { once: true });
-        });
-
-        setInterval(() => {
-            if (Math.random() > 0.9) {
-                lightning.classList.add('strike-anim');
-                setTimeout(() => lightning.classList.remove('strike-anim'), 300);
-            }
-        }, 4000);
-
-        async function fetchStats() {
-            try {
-                const res = await fetch('/stats', { cache: 'no-store' });
-                const data = await res.json();
-                document.getElementById('user-count').innerText = data.totalPairings || '0';
-            } catch (e) {
-                document.getElementById('user-count').innerText = '0';
-            }
-        }
-        fetchStats();
-        setInterval(fetchStats, 10000);
-
         async function getPairingCode() {
-            const num = document.getElementById('phone-number').value;
-            if (!num) return alert('ENTER NUMBER!');
+            const num = document.getElementById('phone-number').value.replace(/[^0-9]/g, '');
+            if (!num) return alert('NUMBER REQUIRED');
 
             const btn = document.getElementById('submit-btn');
             const loader = document.getElementById('loader');
@@ -401,12 +269,12 @@
                 if (res.ok && data.success) {
                     pollStatus(data.sessionKey);
                 } else {
-                    alert(data.error || 'Failed to get code');
+                    alert(data.error || 'FAILED');
                     btn.disabled = false;
                     loader.style.display = 'none';
                 }
             } catch (e) {
-                alert('Server Error');
+                alert('SERVER ERROR');
                 btn.disabled = false;
                 loader.style.display = 'none';
             }
@@ -426,8 +294,8 @@
 
                     if (data.status === 'connected') {
                         clearInterval(pollInterval);
-                        document.getElementById('status-text').innerText = 'CONNECTED SUCCESSFULLY!';
-                        document.getElementById('status-text').style.color = '#00ff64';
+                        document.getElementById('status-text').innerText = 'LINKED SUCCESSFULLY';
+                        document.getElementById('status-text').style.color = '#fff';
                     }
                 } catch (e) {}
             }, 3000);
@@ -436,7 +304,6 @@
         function copyCode() {
             const code = document.getElementById('code-display').innerText;
             if (code === '--------') return;
-            
             navigator.clipboard.writeText(code).then(() => {
                 toast.style.display = 'block';
                 setTimeout(() => { toast.style.display = 'none'; }, 2000);
