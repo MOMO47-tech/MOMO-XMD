@@ -151,7 +151,7 @@ app.post('/pair', async (req, res) => {
                     } catch (e) {
                         updateSession(sessionKey, { status: 'error', message: 'Failed to get code' });
                     }
-                }, 3000);
+                }, 2000);
             }
 
             if (connection === 'open') {

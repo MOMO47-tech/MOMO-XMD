@@ -3,394 +3,218 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MOMO-XMD | DARK WEB PAIRING</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>MOMO-XMD PAIRING CODE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Nosifer&family=Special+Elite&display=swap');
-
         body {
-            margin: 0;
-            padding: 0;
-            background: #050505;
-            color: #ff0000;
-            font-family: 'Special Elite', cursive;
-            overflow-x: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background-image: radial-gradient(circle at center, #1a0000 0%, #050505 100%);
-        }
-
-        .container {
-            width: 90%;
-            max-width: 500px;
-            background: rgba(10, 0, 0, 0.95);
-            border: 1px solid #ff0000;
-            padding: 40px;
-            box-shadow: 0 0 50px rgba(255, 0, 0, 0.3), inset 0 0 20px rgba(255, 0, 0, 0.2);
+            background-color: #050505;
+            color: #00ff66;
+            font-family: 'Share Tech Mono', monospace;
             text-align: center;
-            position: relative;
-            z-index: 10;
-            border-radius: 5px;
-        }
-
-        .logo {
-            width: 180px;
-            height: 180px;
-            border-radius: 50%;
-            border: 2px solid #ff0000;
-            box-shadow: 0 0 30px #ff0000;
-            margin-bottom: 25px;
-            filter: grayscale(100%) contrast(150%);
-            animation: flicker 3s infinite;
-        }
-
-        @keyframes flicker {
-            0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; }
-            20%, 24%, 55% { opacity: 0.4; }
-        }
-
-        h1 {
-            font-family: 'Nosifer', cursive;
-            font-size: 2.5em;
             margin: 0;
-            color: #ff0000;
-            text-shadow: 0 0 20px #ff0000;
-            letter-spacing: 3px;
-        }
-
-        .sub-title {
-            font-size: 0.9em;
-            color: #880000;
-            margin-bottom: 22px;
-            text-transform: uppercase;
-            letter-spacing: 5px;
-        }
-
-        .users-counter {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 14px;
-            min-width: 150px;
-            margin: 0 auto 28px;
-            padding: 10px 18px;
-            border: 1px solid #440000;
-            background: rgba(0, 0, 0, 0.75);
-            color: #ff0000;
-            box-shadow: 0 0 14px rgba(255, 0, 0, 0.18);
-            letter-spacing: 3px;
-            font-size: 0.78em;
-        }
-
-        .users-counter strong {
-            color: #fff;
-            font-size: 1.45em;
-            letter-spacing: 1px;
-            text-shadow: 0 0 10px #ff0000;
-        }
-
-        .input-group {
-            margin-bottom: 25px;
-            text-align: left;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 10px;
-            color: #ff0000;
-            font-size: 0.8em;
-            letter-spacing: 2px;
-        }
-
-        input {
-            width: 100%;
-            padding: 15px;
-            background: #000;
-            border: 1px solid #440000;
-            color: #ff0000;
-            font-family: 'Special Elite', cursive;
-            box-sizing: border-box;
-            outline: none;
-            transition: 0.3s;
-            font-size: 1.2em;
-            text-align: center;
-        }
-
-        input:focus {
-            border-color: #ff0000;
-            box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
-        }
-
-        button {
-            width: 100%;
-            padding: 18px;
-            background: #880000;
-            border: 1px solid #ff0000;
-            color: #fff;
-            font-family: 'Special Elite', cursive;
-            font-size: 1.1em;
-            cursor: pointer;
-            transition: 0.3s;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            margin-top: 10px;
-        }
-
-        button:hover {
-            background: #ff0000;
-            color: #000;
-            box-shadow: 0 0 30px #ff0000;
-        }
-
-        #result {
-            margin-top: 30px;
             padding: 20px;
-            background: #000;
-            border: 1px solid #ff0000;
-            display: none;
+            overflow-x: hidden;
         }
-
-        .code-box {
-            font-size: 2.8em;
-            color: #fff;
-            letter-spacing: 8px;
-            margin: 20px 0;
-            font-weight: bold;
-            text-shadow: 0 0 20px #ff0000;
-            cursor: pointer;
-        }
-
-        .copy-btn {
-            background: transparent;
-            border: 1px solid #ff0000;
-            color: #ff0000;
-            padding: 10px 20px;
-            font-size: 0.8em;
-            width: auto;
+        .container {
+            max-width: 450px;
             margin: 0 auto;
+            background: #0a0a0a;
+            border: 2px solid #00ff66;
+            box-shadow: 0 0 20px rgba(0, 255, 102, 0.3);
+            border-radius: 12px;
+            padding: 20px;
         }
-
-        .instructions {
-            margin-top: 30px;
-            text-align: left;
-            font-size: 0.8em;
-            color: #880000;
-            line-height: 1.6;
-            border-top: 1px solid #440000;
-            padding-top: 20px;
+        .skull {
+            font-size: 60px;
+            animation: pulse 1.5s infinite;
         }
-
-        .owner {
-            margin-top: 40px;
-            font-size: 0.7em;
-            color: #440000;
-            letter-spacing: 2px;
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; text-shadow: 0 0 20px #00ff66; }
+            100% { transform: scale(1); opacity: 0.8; }
         }
-
-        .owner span { color: #ff0000; }
-
-        .audio-control {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            cursor: pointer;
-            font-size: 1.5em;
-            color: #ff0000;
-            background: rgba(255, 0, 0, 0.1);
+        h1 {
+            font-family: 'Cinzel', serif;
+            color: #fff;
+            text-shadow: 0 0 10px #00ff66;
+            font-size: 24px;
+            margin: 10px 0;
+        }
+        .counter {
+            background: #111;
+            border: 1px dashed #00ff66;
+            padding: 8px;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        input {
+            width: 80%;
             padding: 10px;
-            border-radius: 50%;
-            border: 1px solid #ff0000;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            background: #000;
+            border: 1px solid #00ff66;
+            color: #00ff66;
+            font-size: 16px;
+            text-align: center;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            outline: none;
         }
-
-        .loader {
-            display: none;
-            width: 40px;
-            height: 40px;
-            border: 3px solid #440000;
-            border-top: 3px solid #ff0000;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-        }
-
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-
-        .toast {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #ff0000;
+        button {
+            background: #00ff66;
             color: #000;
-            padding: 10px 30px;
             font-weight: bold;
-            display: none;
-            z-index: 1000;
-            box-shadow: 0 0 20px #ff0000;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-family: 'Share Tech Mono', monospace;
+            transition: 0.3s;
+        }
+        button:hover {
+            background: #fff;
+            box-shadow: 0 0 15px #fff;
+        }
+        .box {
+            border: 1px solid #00ff66;
+            background: #0f0f0f;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            text-align: left;
+        }
+        .box h3 {
+            margin-top: 0;
+            text-align: center;
+            font-family: 'Cinzel', serif;
+        }
+        .code-display {
+            font-size: 28px;
+            font-weight: bold;
+            color: #fff;
+            background: #1a1a1a;
+            padding: 10px;
+            border: 1px dashed #00ff66;
+            text-align: center;
+            letter-spacing: 3px;
+            margin: 10px 0;
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #888;
         }
     </style>
 </head>
 <body>
-    <div class="toast" id="toast">CODE COPIED</div>
-    
     <div class="container">
-        <div class="audio-control" onclick="toggleMusic()">
-            <i id="music-icon" class="fas fa-play"></i>
+        <div class="skull">💀</div>
+        <h1>MOMO-XMD PAIRING</h1>
+        <div class="counter" id="users-counter">USERS: LOADING...</div>
+        
+        <div id="form-section">
+            <input type="text" id="phone" placeholder="Enter number with country code e.g., 255765409584">
+            <br>
+            <button onclick="requestPair()">GET PAIRING CODE</button>
         </div>
 
-        <img src="/momo_xmd_blue_skull.jpg" class="logo" alt="LOGO">
-        <h1>MOMO-XMD</h1>
-        <div class="sub-title">Dark Web Pairing</div>
-        <div class="users-counter" aria-live="polite">
-            <span>USERS</span>
-            <strong id="users-count">0</strong>
-        </div>
-
-        <div id="pairing-section">
-            <div class="input-group">
-                <label>TARGET NUMBER</label>
-                <input type="text" id="phone-number" placeholder="255XXXXXXXXX">
+        <div id="result-section" style="display:none;" class="box">
+            <h3>MOMO-XMD PAIRING CODE 🔐</h3>
+            <div class="code-display" id="code-box">---------</div>
+            <button onclick="copyCode()" style="width:100%; margin-top:5px;">COPY CODE</button>
+            <hr style="border-color: #00ff66; margin: 15px 0;">
+            <div style="font-size: 14px; line-height: 1.6;">
+                <b>How to use 🤳</b><br>
+                ◉ Open WhatsApp on your phone<br>
+                ◉ Go to Linked Devices<br>
+                ◉ Choose Link with phone number<br>
+                ◉ Enter the code shown above
             </div>
-            <button onclick="getPairingCode()" id="submit-btn">INITIATE PAIRING</button>
         </div>
 
-        <div class="loader" id="loader"></div>
-
-        <div id="result">
-            <div class="code-box" id="code-display" onclick="copyCode()">--------</div>
-            <button class="copy-btn" onclick="copyCode()">COPY CODE</button>
-            <div id="status-text" style="margin-top: 20px; font-size: 0.7em; color: #ff0000;">AWAITING WHATSAPP...</div>
-        </div>
-
-        <div class="instructions">
-            <div>◉ Open WhatsApp > Linked Devices</div>
-            <div>◉ Link with phone number</div>
-            <div>◉ Enter the code above</div>
-        </div>
-
-        <div class="owner">
-            PROPERTY OF <span>MOMO47</span> &copy; 2026
+        <div class="footer">
+            > ❑ Powered by MOMO-XMD ❑<br>
+            > ❑ owner MOMO47 ❑
         </div>
     </div>
 
-    <audio id="bgm" src="bgm.mp3" loop></audio>
+    <!-- Background Audio -->
+    <audio id="bg-music" loop>
+        <source src="https://www.bensound.com/bensound-music/bensound-scifi.mp3" type="audio/mp3">
+    </audio>
 
     <script>
-        let pollInterval;
-        const bgm = document.getElementById('bgm');
-        const toast = document.getElementById('toast');
+        // Start background music on first interaction
+        document.addEventListener('click', () => {
+            const audio = document.getElementById('bg-music');
+            if (audio.paused) { audio.play().catch(e => {}); }
+        }, { once: true });
 
-        async function updateUsersCount() {
+        async function fetchStats() {
             try {
-                const response = await fetch('/stats', { cache: 'no-store' });
-                if (!response.ok) return;
-                const data = await response.json();
-                const count = Number(data.totalPairings ?? data.users ?? 0);
-                if (Number.isFinite(count)) {
-                    document.getElementById('users-count').textContent = String(Math.max(0, count));
-                }
-            } catch (error) {
-                // Keep the current value when the statistics endpoint is temporarily unavailable.
+                const res = await fetch('/stats');
+                const data = await res.json();
+                document.getElementById('users-counter').innerText = `USERS: ${data.totalPairings || 0}`;
+            } catch (e) {
+                document.getElementById('users-counter').innerText = `USERS: 0`;
             }
         }
+        fetchStats();
+        setInterval(fetchStats, 5000);
 
-        function toggleMusic() {
-            const icon = document.getElementById('music-icon');
-            if (bgm.paused) {
-                bgm.play().catch(e => {});
-                icon.className = 'fas fa-pause';
-            } else {
-                bgm.pause();
-                icon.className = 'fas fa-play';
-            }
-        }
-
-        function playMusic() {
-            bgm.play().then(() => {
-                document.getElementById('music-icon').className = 'fas fa-pause';
-            }).catch(e => {});
-        }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            playMusic();
-            updateUsersCount();
-            setInterval(updateUsersCount, 10000);
-        });
-        ['click', 'touchstart', 'keydown'].forEach(evt => {
-            document.body.addEventListener(evt, () => {
-                if (bgm.paused) playMusic();
-            }, { once: true });
-        });
-
-        async function getPairingCode() {
-            const num = document.getElementById('phone-number').value.replace(/[^0-9]/g, '');
-            if (!num) return alert('NUMBER REQUIRED');
-
-            const btn = document.getElementById('submit-btn');
-            const loader = document.getElementById('loader');
-            const result = document.getElementById('result');
-
+        async function requestPair() {
+            const number = document.getElementById('phone').value.trim();
+            if (!number) { alert('Please enter phone number!'); return; }
+            
+            const btn = document.querySelector('#form-section button');
+            btn.innerText = 'CONNECTING...';
             btn.disabled = true;
-            loader.style.display = 'block';
-            result.style.display = 'none';
 
             try {
                 const res = await fetch('/pair', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ number: num })
+                    body: JSON.stringify({ number })
                 });
                 const data = await res.json();
-
-                if (res.ok && data.success) {
-                    pollStatus(data.sessionKey);
-                } else {
-                    alert(data.error || 'FAILED');
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    btn.innerText = 'GET PAIRING CODE';
                     btn.disabled = false;
-                    loader.style.display = 'none';
+                    return;
                 }
+
+                // Poll status
+                const sessionKey = data.sessionKey;
+                const interval = setInterval(async () => {
+                    try {
+                        const sRes = await fetch(`/session-status/${sessionKey}`);
+                        const sData = await sRes.json();
+                        if (sData.code) {
+                            clearInterval(interval);
+                            document.getElementById('form-section').style.display = 'none';
+                            document.getElementById('result-section').style.display = 'block';
+                            document.getElementById('code-box').innerText = sData.code;
+                        } else if (sData.status === 'error') {
+                            clearInterval(interval);
+                            alert('Failed to get code. Please try again.');
+                            btn.innerText = 'GET PAIRING CODE';
+                            btn.disabled = false;
+                        }
+                    } catch (e) {}
+                }, 2000);
+
             } catch (e) {
-                alert('SERVER ERROR');
+                alert('Network error!');
+                btn.innerText = 'GET PAIRING CODE';
                 btn.disabled = false;
-                loader.style.display = 'none';
             }
         }
 
-        function pollStatus(key) {
-            pollInterval = setInterval(async () => {
-                try {
-                    const res = await fetch(`/session-status/${key}`);
-                    const data = await res.json();
-
-                    if (data.code) {
-                        document.getElementById('loader').style.display = 'none';
-                        document.getElementById('result').style.display = 'block';
-                        document.getElementById('code-display').innerText = data.code;
-                    }
-
-                    if (data.status === 'connected') {
-                        clearInterval(pollInterval);
-                        updateUsersCount();
-                        document.getElementById('status-text').innerText = 'LINKED SUCCESSFULLY';
-                        document.getElementById('status-text').style.color = '#fff';
-                    }
-                } catch (e) {}
-            }, 3000);
-        }
-
         function copyCode() {
-            const code = document.getElementById('code-display').innerText;
-            if (code === '--------') return;
+            const code = document.getElementById('code-box').innerText;
             navigator.clipboard.writeText(code).then(() => {
-                toast.style.display = 'block';
-                setTimeout(() => { toast.style.display = 'none'; }, 2000);
+                alert('Pairing code copied to clipboard!');
             });
         }
     </script>
