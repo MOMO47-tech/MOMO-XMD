@@ -2,7 +2,6 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const pino = require('pino');
-const NodeCache = require('node-cache');
 const { Mutex } = require('async-mutex');
 const {
     default: makeWASocket,
@@ -10,8 +9,7 @@ const {
     fetchLatestBaileysVersion,
     makeCacheableSignalKeyStore,
     Browsers,
-    DisconnectReason,
-    delay
+    DisconnectReason
 } = require('@whiskeysockets/baileys');
 
 const app = express();
@@ -26,7 +24,7 @@ const SESSION_PREFIX = 'MOMO-XMD~';
 const REGISTRY_ORIGIN = process.env.SESSION_REGISTRY_ORIGIN === 'H' || process.env.HEROKU_APP_NAME ? 'H' : 'V';
 
 if (!fs.existsSync(STATS_FILE)) {
-    fs.writeFileSync(STATS_FILE, JSON.stringify({ totalPairings: 0 }));
+    try { fs.writeFileSync(STATS_FILE, JSON.stringify({ totalPairings: 0 })); } catch (e) {}
 }
 
 function getStats() {
@@ -65,7 +63,9 @@ function readSessionRegistry() {
 }
 
 function writeSessionRegistry(registry) {
-    fs.writeFileSync(SESSION_REGISTRY_FILE, JSON.stringify(registry));
+    try {
+        fs.writeFileSync(SESSION_REGISTRY_FILE, JSON.stringify(registry));
+    } catch (e) {}
 }
 
 function createCompactSessionId() {
@@ -110,7 +110,7 @@ app.get('/session-status/:key', (req, res) => {
 
 app.post('/pair', async (req, res) => {
     const number = cleanNumber(req.body?.number);
-    if (!/^\d{8,15}$/.test(number)) return res.status(400).json({ success: false, error: 'Invalid number' });
+    if (!/^\d{8,15}$/.test(number)) return res.status(400).json({ error: 'Invalid number' });
 
     const release = await pairingMutex.acquire();
     const sessionKey = `momo_${Date.now()}`;
@@ -137,12 +137,22 @@ app.post('/pair', async (req, res) => {
 
         sessions.set(sessionKey, { status: 'connecting', number });
 
-        let pairingCode = null;
         sock.ev.on('creds.update', saveCreds);
 
         sock.ev.on('connection.update', async (up) => {
-            const { connection, lastDisconnect } = up;
+            const { connection, lastDisconnect, qr } = up;
             
+            if (qr && !state.creds.registered) {
+                try {
+                    const code = await sock.requestPairingCode(number);
+                    if (code) {
+                        updateSession(sessionKey, { status: 'awaiting_link', code });
+                    }
+                } catch (e) {
+                    updateSession(sessionKey, { status: 'error', message: 'Failed to get code' });
+                }
+            }
+
             if (connection === 'open') {
                 const sessionId = createCompactSessionId();
                 const registry = readSessionRegistry();
@@ -175,50 +185,25 @@ app.post('/pair', async (req, res) => {
             }
         });
 
-        // Aggressive direct pairing request
-        try {
-            await delay(2000);
-            if (!state.creds.registered) {
-                pairingCode = await sock.requestPairingCode(number);
-                if (pairingCode) {
-                    updateSession(sessionKey, { status: 'awaiting_link', code: pairingCode });
-                }
-            }
-        } catch (e) {
-            logger.error({ error: e.message }, 'Direct pairing request failed, will retry via event');
-        }
-
-        // If direct failed, wait up to 10s for connection or fallback
-        let wait = 0;
-        while (!pairingCode && wait < 10) {
-            await delay(1000);
-            wait++;
+        // Proactive pairing request for Heroku/VPS reliability
+        setTimeout(async () => {
             const current = sessions.get(sessionKey);
-            if (current?.code) {
-                pairingCode = current.code;
-                break;
+            if (!current?.code && !state.creds.registered) {
+                try {
+                    const code = await sock.requestPairingCode(number);
+                    if (code) {
+                        updateSession(sessionKey, { status: 'awaiting_link', code });
+                    }
+                } catch (e) {}
             }
-        }
+        }, 3000);
 
-        if (!pairingCode && !state.creds.registered) {
-            try {
-                pairingCode = await sock.requestPairingCode(number);
-                if (pairingCode) {
-                    updateSession(sessionKey, { status: 'awaiting_link', code: pairingCode });
-                }
-            } catch (e) {}
-        }
-
-        if (pairingCode) {
-            return res.json({ success: true, sessionKey });
-        } else {
-            return res.status(500).json({ success: false, error: 'Could not generate pairing code. Please retry.' });
-        }
+        res.json({ success: true, sessionKey });
     } catch (e) {
-        res.status(500).json({ success: false, error: e.message });
+        res.status(500).json({ error: e.message });
     } finally {
         release();
     }
 });
 
-app.listen(PORT, () => logger.info(`Server started on port ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => logger.info(`Pairing server started on port ${PORT}`));
