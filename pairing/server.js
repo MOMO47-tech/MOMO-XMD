@@ -110,7 +110,7 @@ app.get('/session-status/:key', (req, res) => {
 
 app.post('/pair', async (req, res) => {
     const number = cleanNumber(req.body?.number);
-    if (!/^\d{8,15}$/.test(number)) return res.status(400).json({ error: 'Invalid number' });
+    if (!/^\d{8,15}$/.test(number)) return res.status(400).json({ error: 'Invalid number format' });
 
     const release = await pairingMutex.acquire();
     const sessionKey = `momo_${Date.now()}`;
@@ -125,10 +125,18 @@ app.post('/pair', async (req, res) => {
         const { state, saveCreds } = await useMultiFileAuthState(authDir);
         
         const sock = makeWASocket({
-            auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, logger) },
+            auth: {
+                creds: state.creds,
+                keys: makeCacheableSignalKeyStore(state.keys, logger)
+            },
             printQRInTerminal: false,
             logger: logger,
-            browser: Browsers.ubuntu("Chrome")
+            browser: Browsers.macOS("Chrome"),
+            connectTimeoutMs: 60000,
+            defaultQueryTimeoutMs: 60000,
+            keepAliveIntervalMs: 10000,
+            emitOwnEvents: true,
+            markOnlineOnConnect: true
         });
 
         sessions.set(sessionKey, { status: 'connecting', number });
@@ -149,9 +157,9 @@ app.post('/pair', async (req, res) => {
                             updateSession(sessionKey, { status: 'awaiting_link', code });
                         }
                     } catch (e) {
-                        updateSession(sessionKey, { status: 'error', message: 'Failed to get code' });
+                        updateSession(sessionKey, { status: 'error', message: e.message || 'Failed to get code' });
                     }
-                }, 2000);
+                }, 3000);
             }
 
             if (connection === 'open') {
@@ -165,7 +173,7 @@ app.post('/pair', async (req, res) => {
                 writeSessionRegistry(registry);
                 incrementStats();
                 
-                const msg = `╭━━❐━⪼\n┇ ◉ SESSION LINKED ◉\n┇ \n┇ ◉ Session ID: ${sessionId}\n╰━━❑━⪼\n\n> Powered by MOMO-XMD\n> owner MOMO47`;
+                const msg = `╭━━❐━⪼\n┇ ◉ SESSION LINKED ◉\n┇ \n┇ ◉ Session ID: ${sessionId}\n╰━━❑━⪼\n\n> ❑ Powered by MOMO-XMD ❑\n> ❑ owner MOMO47 ❑`;
                 try {
                     if (sock.user?.id) {
                         await sock.sendMessage(sock.user.id, { text: msg });
@@ -197,4 +205,6 @@ app.post('/pair', async (req, res) => {
     }
 });
 
-app.listen(PORT, '0.0.0.0', () => {});
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Pairing server running on port ${PORT}`);
+});
