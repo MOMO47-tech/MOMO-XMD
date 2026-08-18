@@ -305,38 +305,36 @@ app.post('/pair', async (req, res) => {
                 sessionId,
                 `╭◆
 │
-│ 🟢 SESSION LINKED
+│ ● SESSION ● LINKED
 │ 
 │ Paste it as SESSION during deploy
 │ 
 │ Session ID: ${sessionId}
 │
 ╰◆
-
-╭━━━━━━━━━━━━━━━━━━━━╮
-    ┃ 
-    ┃
-    ┃ ★ OWNER : MOMO47
-    ┃ ★ NUMBER 1 : +255 760 298 574
-    ┃ ★ NUMBER 2 : +255 765 409 584
-    ┃ 
-    ┃ ★ CHANNEL 1 :
-    ┃   https://whatsapp.com/channel/0029Vb8AYLf2f3EA8Y4qp63H
-    ┃ 
-    ┃ ★ CHANNEL 2 :
-    ┃   https://whatsapp.com/channel/0029VbDNET6KmCPShs9dyg1U
-    ┃ 
-    ┃ ★ CHANNEL 3 :
-    ┃   https://whatsapp.com/channel/0029VbDeRauAjPXFYDvO5e2D
-    ┃ 
-    ┃ ★ CHANNEL 4 :
-    ┃   https://whatsapp.com/channel/0029VbDYZ7LBVJky0TggGF2N
-    ┃ 
-    ┃ 
-    ╰━━━━━━━━━━━━━━━━━━━━╯
- ❑❑❑
-*Powered by MOMO-XMD* 🚀
-*Owner MOMO47* ☠️`
+╭◆
+│
+│ ◆ OWNER : MOMO47
+│ 
+│ ◆ NUMBER 1 : +255 760 298 574
+│ 
+│ ◆ NUMBER 2 : +255 765 409 584
+│ 
+│ ★ CHANNEL 1 :
+│   https://whatsapp.com/channel/0029Vb8AYLf2f3EA8Y4qp63H
+│ 
+│ ★ CHANNEL 2 :
+│   https://whatsapp.com/channel/0029VbDNET6KmCPShs9dyg1U
+│ 
+│ ★ CHANNEL 3 :
+│   https://whatsapp.com/channel/0029VbDeRauAjPXFYDvO5e2D
+│ 
+│ ★ CHANNEL 4 :
+│   https://whatsapp.com/channel/0029VbDYZ7LBVJky0TggGF2N
+│
+╰◆
+❑ *Powered* ❑ *by* ❑ *MOMO-XMD* 🚀
+❑ *Owner* ❑ *MOMO47* ☠️`
             ];
 
             let inboxDelivered = false;
