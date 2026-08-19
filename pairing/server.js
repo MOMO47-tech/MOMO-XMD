@@ -1,56 +1,58 @@
 const express = require('express');
-const path = require('path');
-const fs = require('fs');
 const { 
     default: makeWASocket, 
     useMultiFileAuthState, 
     delay, 
-    makeCacheableSignalKeyStore,
-    fetchLatestBaileysVersion,
-    DisconnectReason
+    makeCacheableSignalKeyStore, 
+    DisconnectReason,
+    fetchLatestBaileysVersion
 } = require('@whiskeysockets/baileys');
 const pino = require('pino');
+const fs = require('fs');
+const path = require('path');
 const { Semaphore } = require('await-semaphore');
 
 const app = express();
 const port = process.env.PORT || 8000;
-const pairingMutex = new Semaphore(5); // Limit concurrent pairing attempts
-
-const logger = pino({ level: 'silent' });
+const semaphore = new Semaphore(1);
 const sessions = new Map();
 
 const SESSION_REGISTRY_FILE = path.join(__dirname, 'sessions.json');
 const STATS_FILE = path.join(__dirname, 'stats.json');
 const SESSION_PREFIX = 'MOMO-XMD~';
-const REGISTRY_ORIGIN = 'REG_';
 
-// Use a single, highly stable and trusted browser fingerprint for WhatsApp pairing
+// Highly stable browser fingerprint mimicking a real MacOS Chrome instance
 const TRUSTED_BROWSER = ['Mac OS', 'Chrome', '122.0.6261.94'];
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.post('/pair', async (req, res) => {
-    const number = String(req.body?.number || '').replace(/[^0-9]/g, '');
-    if (!/^\d{8,15}$/.test(number)) return res.status(400).json({ error: 'Invalid number format' });
+async function getStats() {
+    if (fs.existsSync(STATS_FILE)) {
+        try { return JSON.parse(fs.readFileSync(STATS_FILE, 'utf8')); } catch (e) { return { totalPairings: 0, linkedNumbers: [] }; }
+    }
+    return { totalPairings: 0, linkedNumbers: [] };
+}
 
-    const release = await pairingMutex.acquire();
-    const sessionKey = `momo_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
-    // Use a local directory instead of /tmp for better Heroku stability
+app.get('/stats', async (req, res) => {
+    const stats = await getStats();
+    res.json(stats);
+});
+
+app.post('/pair', async (req, res) => {
+    const { number } = req.body;
+    if (!number) return res.status(400).json({ error: 'Number is required' });
+
+    const sessionKey = `momo_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
     const authDir = path.join(__dirname, 'temp_sessions', sessionKey);
     
     try {
-        if (!fs.existsSync(path.join(__dirname, 'temp_sessions'))) {
-            fs.mkdirSync(path.join(__dirname, 'temp_sessions'), { recursive: true });
-        }
-        if (fs.existsSync(authDir)) {
-            fs.rmSync(authDir, { recursive: true, force: true });
-        }
-        fs.mkdirSync(authDir, { recursive: true });
+        if (!fs.existsSync(authDir)) fs.mkdirSync(authDir, { recursive: true });
 
         const { state, saveCreds } = await useMultiFileAuthState(authDir);
-        
         const { version } = await fetchLatestBaileysVersion();
+        
+        const logger = pino({ level: 'silent' });
         const sock = makeWASocket({
             auth: {
                 creds: state.creds,
@@ -60,35 +62,33 @@ app.post('/pair', async (req, res) => {
             printQRInTerminal: false,
             logger: logger,
             browser: TRUSTED_BROWSER,
-            connectTimeoutMs: 60000,
+            connectTimeoutMs: 100000, // Increased timeout for slow cloud handshakes
             defaultQueryTimeoutMs: 60000,
             keepAliveIntervalMs: 30000,
             markOnlineOnConnect: false,
             generateHighQualityLinkPreview: false,
-            syncFullHistory: false
+            syncFullHistory: false,
+            // Enhanced stealth options
+            options: {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+                }
+            }
         });
 
-        sessions.set(sessionKey, { status: 'connecting', number });
+        sessions.set(sessionKey, { status: 'connecting', number, sock });
 
         sock.ev.on('creds.update', saveCreds);
 
         sock.ev.on('connection.update', async (up) => {
-            const { connection, lastDisconnect, qr } = up;
-            console.log(`[CONNECTION UPDATE] Status: ${connection}`, JSON.stringify(up, null, 2));
-            
-            if (connection === 'close') {
-                const reason = lastDisconnect?.error?.output?.statusCode;
-                console.log(`[CONNECTION CLOSED] Reason: ${reason}`, lastDisconnect?.error);
-                const current = sessions.get(sessionKey) || {};
-                if (sessions.get(sessionKey)?.status === 'awaiting_link') {
-                    sessions.set(sessionKey, { ...current, status: 'error', message: 'Pairing failed or timed out. Please try again.' });
-                }
-            }
-            
+            const { connection, lastDisconnect } = up;
+            console.log(`[SESSION: ${sessionKey}] Status: ${connection}`);
+
             if (connection === 'open') {
                 const randomPart = Array.from({ length: 22 }, () => Math.floor(Math.random() * 36).toString(36)).join('').toUpperCase();
                 const sessionId = `${SESSION_PREFIX}${randomPart}`;
                 
+                // Collect session files
                 const files = {};
                 const walk = (dir) => {
                     if (!fs.existsSync(dir)) return;
@@ -100,102 +100,94 @@ app.post('/pair', async (req, res) => {
                 };
                 walk(authDir);
 
-                try {
-                    let registry = {};
-                    if (fs.existsSync(SESSION_REGISTRY_FILE)) {
-                        try { registry = JSON.parse(fs.readFileSync(SESSION_REGISTRY_FILE, 'utf8') || '{}'); } catch (e) {}
-                    }
-                    registry[sessionId] = { fullNumber: number, files, createdAt: Date.now() };
-                    fs.writeFileSync(SESSION_REGISTRY_FILE, JSON.stringify(registry));
-                    
-                    let stats = { totalPairings: 0, linkedNumbers: [] };
-                    if (fs.existsSync(STATS_FILE)) {
-                        try { stats = JSON.parse(fs.readFileSync(STATS_FILE, 'utf8') || '{ "totalPairings": 0, "linkedNumbers": [] }'); } catch (e) {}
-                    }
-                    if (!stats.linkedNumbers.includes(number)) {
-                        stats.linkedNumbers.push(number);
-                        stats.totalPairings = stats.linkedNumbers.length;
-                    }
+                // Update registry
+                let registry = {};
+                if (fs.existsSync(SESSION_REGISTRY_FILE)) {
+                    try { registry = JSON.parse(fs.readFileSync(SESSION_REGISTRY_FILE, 'utf8') || '{}'); } catch (e) {}
+                }
+                registry[sessionId] = { fullNumber: number, files, createdAt: Date.now() };
+                fs.writeFileSync(SESSION_REGISTRY_FILE, JSON.stringify(registry));
+                
+                // Update stats
+                let stats = await getStats();
+                if (!stats.linkedNumbers.includes(number)) {
+                    stats.linkedNumbers.push(number);
+                    stats.totalPairings = stats.linkedNumbers.length;
                     fs.writeFileSync(STATS_FILE, JSON.stringify(stats));
-                } catch (e) {
-                    console.error('[REGISTRY ERROR]:', e);
                 }
 
                 sessions.set(sessionKey, { status: 'linked', sessionId });
-                setTimeout(() => {
-                    try { fs.rmSync(authDir, { recursive: true, force: true }); } catch (e) {}
-                    sock.end();
-                }, 5000);
+                console.log(`[SESSION: ${sessionKey}] ✅ LINKED SUCCESSFULLY: ${number}`);
+                
+                // Cleanup socket after successful link
+                await delay(5000);
+                sock.logout();
+                fs.rmSync(authDir, { recursive: true, force: true });
             }
 
             if (connection === 'close') {
-                const code = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.output?.payload?.statusCode;
-                if (code !== DisconnectReason.loggedOut && sessions.get(sessionKey)?.status !== 'linked') {
-                    // Handle unexpected closure
+                const reason = lastDisconnect?.error?.output?.statusCode;
+                console.log(`[SESSION: ${sessionKey}] ❌ CLOSED. Reason: ${reason}`);
+                
+                if (reason !== DisconnectReason.loggedOut && sessions.get(sessionKey)?.status !== 'linked') {
+                    const current = sessions.get(sessionKey) || {};
+                    sessions.set(sessionKey, { ...current, status: 'error', message: 'Connection failed. Please try again.' });
                 }
             }
         });
 
-        // Request pairing code with retry logic
-        const requestWithRetry = async (retryCount = 0) => {
+        // Request pairing code with a slight delay to ensure socket is ready
+        setTimeout(async () => {
             try {
                 if (!sock.authState.creds.registered) {
-                    await delay(5000 + (retryCount * 2000));
+                    await delay(5000);
+                    console.log(`[SESSION: ${sessionKey}] Requesting pairing code for: ${number}`);
                     const code = await sock.requestPairingCode(number);
                     if (code) {
                         const current = sessions.get(sessionKey) || {};
                         sessions.set(sessionKey, { ...current, status: 'awaiting_link', code });
+                        console.log(`[SESSION: ${sessionKey}] Code generated: ${code}`);
                     }
                 }
             } catch (e) {
-                console.error(`[PAIRING CODE ATTEMPT ${retryCount + 1} FAILED]:`, e);
-                if (retryCount < 3 && (e.message.includes('Connection Closed') || e.message.includes('precondition'))) {
-                    await requestWithRetry(retryCount + 1);
-                } else {
-                    const current = sessions.get(sessionKey) || {};
-                    sessions.set(sessionKey, { ...current, status: 'error', message: e.message });
-                }
+                console.error(`[SESSION: ${sessionKey}] ❌ Pairing code request failed:`, e.message);
+                const current = sessions.get(sessionKey) || {};
+                sessions.set(sessionKey, { ...current, status: 'error', message: e.message });
             }
-        };
-        requestWithRetry();
+        }, 3000);
 
         res.json({ sessionKey });
 
     } catch (err) {
-        console.error('[API ERROR]:', err);
-        res.status(500).json({ error: 'Failed to initialize pairing' });
-    } finally {
-        release();
+        console.error('[SERVER ERROR]:', err);
+        res.status(500).json({ error: 'Internal server error' });
     }
 });
 
-app.get('/session-status/:key', (req, res) => {
-    const session = sessions.get(req.params.key);
+app.get('/session-status/:sessionKey', (req, res) => {
+    const session = sessions.get(req.params.sessionKey);
     if (!session) return res.status(404).json({ error: 'Session not found' });
-    res.json(session);
+    res.json({
+        status: session.status,
+        code: session.code,
+        sessionId: session.sessionId,
+        message: session.message
+    });
 });
 
-app.get('/api/stats', (req, res) => {
-    if (fs.existsSync(STATS_FILE)) {
-        res.sendFile(STATS_FILE);
-    } else {
-        res.json({ totalPairings: 0 });
-    }
-});
-
-app.get('/api/reset', (req, res) => {
+app.get('/reset', (req, res) => {
     try {
         sessions.clear();
         const tempDir = path.join(__dirname, 'temp_sessions');
         if (fs.existsSync(tempDir)) {
             fs.rmSync(tempDir, { recursive: true, force: true });
         }
-        res.json({ success: true, message: 'Sessions cleared successfully' });
+        res.json({ success: true, message: 'All sessions and temp files cleared.' });
     } catch (e) {
         res.status(500).json({ error: e.message });
     }
 });
 
 app.listen(port, () => {
-    console.log(`[PAIRING SERVER] Running on port ${port}`);
+    console.log(`[MOMO-XMD PAIRING] Server running on port ${port}`);
 });
