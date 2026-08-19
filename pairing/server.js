@@ -80,7 +80,7 @@ router.post('/pair', async (req, res) => {
             },
             printQRInTerminal: false,
             logger: logger,
-            browser: Browsers.android('Chrome'),
+            browser: Browsers.ubuntu("Chrome"),
             connectTimeoutMs: 60000,
             keepAliveIntervalMs: 25000,
             markOnlineOnConnect: false,
@@ -92,11 +92,11 @@ router.post('/pair', async (req, res) => {
 
         sock.ev.on('creds.update', saveCreds);
 
-        // Extended handshake delay for Heroku to establish secure websocket
+        // Faster code request logic
         setTimeout(async () => {
             try {
                 if (!sock.authState.creds.registered) {
-                    await delay(5000);
+                    await delay(3000);
                     const code = await sock.requestPairingCode(number);
                     if (code) {
                         const current = sessions.get(sessionKey) || {};
@@ -108,7 +108,7 @@ router.post('/pair', async (req, res) => {
                 const current = sessions.get(sessionKey) || {};
                 sessions.set(sessionKey, { ...current, status: 'error', message: e.message || 'Could not generate code' });
             }
-        }, 3000);
+        }, 2000);
 
         sock.ev.on('connection.update', async (up) => {
             const { connection, lastDisconnect } = up;
