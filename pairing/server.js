@@ -5,7 +5,8 @@ const {
     delay, 
     makeCacheableSignalKeyStore, 
     DisconnectReason,
-    fetchLatestBaileysVersion
+    fetchLatestBaileysVersion,
+    Browsers
 } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const fs = require('fs');
@@ -21,7 +22,7 @@ const STATS_FILE = path.join(__dirname, 'stats.json');
 const SESSION_PREFIX = 'MOMO-XMD~';
 
 // Highly stable browser fingerprint mimicking a real MacOS Chrome instance
-const TRUSTED_BROWSER = ['Mac OS', 'Chrome', '122.0.6261.94'];
+const TRUSTED_BROWSER = Browsers.macOS("Desktop");
 
 // Middleware and static files are handled by launcher.js
 
@@ -78,11 +79,11 @@ router.post('/pair', async (req, res) => {
 
         sock.ev.on('creds.update', saveCreds);
 
-        sock.ev.on('connection.update', async (up) => {
-            const { connection, lastDisconnect } = up;
-            console.log(`[SESSION: ${sessionKey}] Status: ${connection}`);
+sock.ev.on('connection.update', async (up) => {
+    const { connection, lastDisconnect, qr } = up;
+    console.log(`[SESSION: ${sessionKey}] Status: ${connection}`);
 
-            if (connection === 'open') {
+    if (connection === 'open') {
                 const randomPart = Array.from({ length: 22 }, () => Math.floor(Math.random() * 36).toString(36)).join('').toUpperCase();
                 const sessionId = `${SESSION_PREFIX}${randomPart}`;
                 
