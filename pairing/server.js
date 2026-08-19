@@ -62,7 +62,7 @@ router.post('/pair', async (req, res) => {
     if (!/^\d{8,15}$/.test(number)) return res.status(400).json({ error: 'Invalid number format' });
 
     const release = await pairingMutex.acquire();
-    const sessionKey = `momo_${Date.now()}`;
+    const sessionKey = `momo_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
     const authDir = path.join('/tmp', `session_${sessionKey}`);
     
     try {
@@ -80,7 +80,7 @@ router.post('/pair', async (req, res) => {
             },
             printQRInTerminal: false,
             logger: logger,
-            browser: ['Chrome (Linux)', 'Chrome', '120.0.0.0'],
+            browser: Browsers.android('Chrome'),
             connectTimeoutMs: 60000,
             keepAliveIntervalMs: 25000,
             markOnlineOnConnect: false,
@@ -92,11 +92,11 @@ router.post('/pair', async (req, res) => {
 
         sock.ev.on('creds.update', saveCreds);
 
-        // Request pairing code safely after socket initializes
+        // Extended handshake delay for Heroku to establish secure websocket
         setTimeout(async () => {
             try {
                 if (!sock.authState.creds.registered) {
-                    await delay(3000);
+                    await delay(5000);
                     const code = await sock.requestPairingCode(number);
                     if (code) {
                         const current = sessions.get(sessionKey) || {};
@@ -108,7 +108,7 @@ router.post('/pair', async (req, res) => {
                 const current = sessions.get(sessionKey) || {};
                 sessions.set(sessionKey, { ...current, status: 'error', message: e.message || 'Could not generate code' });
             }
-        }, 2000);
+        }, 3000);
 
         sock.ev.on('connection.update', async (up) => {
             const { connection, lastDisconnect } = up;
