@@ -33,7 +33,7 @@ const USER_AGENTS = [
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.post('/api/pair', async (req, res) => {
+app.post('/pair', async (req, res) => {
     const number = String(req.body?.number || '').replace(/[^0-9]/g, '');
     if (!/^\d{8,15}$/.test(number)) return res.status(400).json({ error: 'Invalid number format' });
 
@@ -153,7 +153,7 @@ app.post('/api/pair', async (req, res) => {
     }
 });
 
-app.get('/api/status/:key', (req, res) => {
+app.get('/session-status/:key', (req, res) => {
     const session = sessions.get(req.params.key);
     if (!session) return res.status(404).json({ error: 'Session not found' });
     res.json(session);
