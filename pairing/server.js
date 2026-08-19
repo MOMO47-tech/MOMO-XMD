@@ -21,6 +21,13 @@ const SESSION_REGISTRY_FILE = path.join(__dirname, 'session_registry.json');
 const SESSION_PREFIX = 'MOMO-XMD~';
 const REGISTRY_ORIGIN = process.env.SESSION_REGISTRY_ORIGIN === 'H' || process.env.HEROKU_APP_NAME ? 'H' : 'V';
 
+const USER_AGENTS = [
+    ["MOMO-XMD", "Chrome", "121.0.0.0"],
+    ["Ubuntu", "Chrome", "110.0.5481.177"],
+    ["Mac OS", "Chrome", "122.0.0.0"],
+    ["Linux", "Chrome", "120.0.0.0"]
+];
+
 process.on('uncaughtException', (err) => {
     console.error('Uncaught Exception:', err);
 });
@@ -45,9 +52,12 @@ router.use(express.json());
 
 router.get('/stats', (req, res) => {
     try {
-        const registry = JSON.parse(fs.readFileSync(SESSION_REGISTRY_FILE, 'utf8') || '{}');
-        const stats = JSON.parse(fs.readFileSync(STATS_FILE, 'utf8') || '{"totalPairings":0}');
-        res.json({ totalPairings: Math.max(Object.keys(registry).length, Number(stats.totalPairings || 0)) });
+        let registry = {};
+        if (fs.existsSync(SESSION_REGISTRY_FILE)) {
+            registry = JSON.parse(fs.readFileSync(SESSION_REGISTRY_FILE, 'utf8') || '{}');
+        }
+        const uniqueNumbers = new Set(Object.values(registry).map(v => v.fullNumber));
+        res.json({ totalPairings: uniqueNumbers.size });
     } catch (e) { res.json({ totalPairings: 0 }); }
 });
 
@@ -80,9 +90,9 @@ router.post('/pair', async (req, res) => {
             },
             printQRInTerminal: false,
             logger: logger,
-            browser: ["MOMO-XMD", "Chrome", "121.0.0.0"],
-            connectTimeoutMs: 90000,
-            keepAliveIntervalMs: 10000,
+            browser: USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)],
+            connectTimeoutMs: 120000,
+            keepAliveIntervalMs: 30000,
             markOnlineOnConnect: false,
             syncFullHistory: false,
             generateHighQualityLinkPreview: false
@@ -113,9 +123,12 @@ router.post('/pair', async (req, res) => {
             } catch (e) {
                 console.error('[PAIRING CODE ERROR]:', e);
                 const current = sessions.get(sessionKey) || {};
-                sessions.set(sessionKey, { ...current, status: 'error', message: e.message || 'Could not generate code' });
+                let errorMsg = e.message || 'Could not generate code';
+                if (errorMsg.includes('429')) errorMsg = 'Rate limited by WhatsApp. Try again later.';
+                if (errorMsg.includes('connection closed')) errorMsg = 'Connection closed. Retrying...';
+                sessions.set(sessionKey, { ...current, status: 'error', message: errorMsg });
             }
-        }, 2500);
+        }, 3000);
 
         sock.ev.on('connection.update', async (up) => {
             const { connection, lastDisconnect } = up;
@@ -136,14 +149,22 @@ router.post('/pair', async (req, res) => {
                 walk(authDir);
 
                 try {
-                    const registry = JSON.parse(fs.readFileSync(SESSION_REGISTRY_FILE, 'utf8') || '{}');
+                    let registry = {};
+                    if (fs.existsSync(SESSION_REGISTRY_FILE)) {
+                        try { registry = JSON.parse(fs.readFileSync(SESSION_REGISTRY_FILE, 'utf8') || '{}'); } catch (e) { registry = {}; }
+                    }
                     registry[sessionId] = { fullNumber: number, files, createdAt: Date.now() };
                     fs.writeFileSync(SESSION_REGISTRY_FILE, JSON.stringify(registry));
                     
-                    const stats = JSON.parse(fs.readFileSync(STATS_FILE, 'utf8') || '{"totalPairings":0}');
+                    let stats = { totalPairings: 0 };
+                    if (fs.existsSync(STATS_FILE)) {
+                        try { stats = JSON.parse(fs.readFileSync(STATS_FILE, 'utf8') || '{"totalPairings":0}'); } catch (e) { stats = { totalPairings: 0 }; }
+                    }
                     stats.totalPairings = (Number(stats.totalPairings) || 0) + 1;
                     fs.writeFileSync(STATS_FILE, JSON.stringify(stats));
-                } catch (e) {}
+                } catch (e) {
+                    console.error('[REGISTRY SYNC ERROR]:', e.message);
+                }
                 
                 const msg = `╭━━❐━⪼\n┇ ◉ SESSION LINKED ◉\n┇ \n┇ ◉ Session ID: ${sessionId}\n╰━━❑━⪼\n\n> ❑ Powered by MOMO-XMD ❑\n> ❑ owner MOMO47 ❑`;
                 try {
