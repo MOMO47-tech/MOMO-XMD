@@ -22,7 +22,7 @@ const STATS_FILE = path.join(__dirname, 'stats.json');
 const SESSION_PREFIX = 'MOMO-XMD~';
 
 // Highly stable browser fingerprint mimicking a real MacOS Chrome instance
-const TRUSTED_BROWSER = Browsers.macOS("Desktop");
+const TRUSTED_BROWSER = Browsers.ubuntu("Chrome");
 
 // Middleware and static files are handled by launcher.js
 
