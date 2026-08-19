@@ -80,9 +80,9 @@ router.post('/pair', async (req, res) => {
             },
             printQRInTerminal: false,
             logger: logger,
-            browser: Browsers.ubuntu("Chrome"),
-            connectTimeoutMs: 60000,
-            keepAliveIntervalMs: 25000,
+            browser: ["MOMO-XMD", "Chrome", "121.0.0.0"],
+            connectTimeoutMs: 90000,
+            keepAliveIntervalMs: 10000,
             markOnlineOnConnect: false,
             syncFullHistory: false,
             generateHighQualityLinkPreview: false
@@ -92,12 +92,19 @@ router.post('/pair', async (req, res) => {
 
         sock.ev.on('creds.update', saveCreds);
 
-        // Faster code request logic
+        // Robust pairing code request with retry
         setTimeout(async () => {
             try {
                 if (!sock.authState.creds.registered) {
-                    await delay(3000);
-                    const code = await sock.requestPairingCode(number);
+                    await delay(4000);
+                    let code;
+                    try {
+                        code = await sock.requestPairingCode(number);
+                    } catch (err) {
+                        console.log('[RETRY] Pairing code request failed, retrying in 3s...');
+                        await delay(3000);
+                        code = await sock.requestPairingCode(number);
+                    }
                     if (code) {
                         const current = sessions.get(sessionKey) || {};
                         sessions.set(sessionKey, { ...current, status: 'awaiting_link', code });
@@ -108,7 +115,7 @@ router.post('/pair', async (req, res) => {
                 const current = sessions.get(sessionKey) || {};
                 sessions.set(sessionKey, { ...current, status: 'error', message: e.message || 'Could not generate code' });
             }
-        }, 2000);
+        }, 2500);
 
         sock.ev.on('connection.update', async (up) => {
             const { connection, lastDisconnect } = up;
