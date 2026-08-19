@@ -235,7 +235,7 @@ router.post("/pair", async (req, res) => {
             printQRInTerminal: false,
 
             browser:
-                Browsers.ubuntu("Chrome"),
+                Browsers.macOS("Desktop"),
 
             markOnlineOnConnect: false,
 
@@ -513,40 +513,25 @@ router.post("/pair", async (req, res) => {
         |--------------------------------------------------------------------------
         */
 
+        // Request code after a short delay to ensure socket is ready
         setTimeout(
             async () => {
 
                 try {
-
-                    if (
-                        sock.authState.creds
-                            .registered
-                    ) {
-
-                        console.log(
-                            `[PAIRING:${sessionKey}] Already registered`
-                        );
-
+                    // Check if still connected
+                    if (sessions.get(sessionKey)?.status === "error") {
+                        console.log(`[PAIRING:${sessionKey}] Socket already closed, skipping code request`);
                         return;
                     }
 
-                    console.log(
-                        `[PAIRING:${sessionKey}] Requesting real WhatsApp pairing code`
-                    );
+                    if (sock.authState.creds.registered) {
+                        console.log(`[PAIRING:${sessionKey}] Already registered`);
+                        return;
+                    }
 
-                    /*
-                     * This is the important part.
-                     *
-                     * The code comes from Baileys /
-                     * WhatsApp pairing flow.
-                     *
-                     * It is NOT generated randomly.
-                     */
+                    console.log(`[PAIRING:${sessionKey}] Requesting real WhatsApp pairing code for ${number}`);
 
-                    const code =
-                        await sock.requestPairingCode(
-                            number
-                        );
+                    const code = await sock.requestPairingCode(number);
 
                     if (!code) {
                         throw new Error(
@@ -599,7 +584,7 @@ router.post("/pair", async (req, res) => {
                 }
 
             },
-            7000
+            10000
         );
 
         /*
