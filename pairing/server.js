@@ -73,13 +73,12 @@ router.post('/pair', async (req, res) => {
 
     const release = await pairingMutex.acquire();
     const sessionKey = `momo_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
-    const authDir = path.join('/tmp', `session_${sessionKey}`);
+    const authDir = path.join(require('os').tmpdir(), `momo_sess_${Date.now()}_${Math.random().toString(36).substring(7)}`);
     
     try {
-        if (fs.existsSync(authDir)) {
-            try { fs.rmSync(authDir, { recursive: true, force: true }); } catch (e) {}
+        if (!fs.existsSync(authDir)) {
+            fs.mkdirSync(authDir, { recursive: true });
         }
-        fs.mkdirSync(authDir, { recursive: true });
 
         const { state, saveCreds } = await useMultiFileAuthState(authDir);
         
@@ -105,19 +104,30 @@ router.post('/pair', async (req, res) => {
         // Robust pairing code request with retry
         setTimeout(async () => {
             try {
+                // Wait for connection to be initialized
+                let attempts = 0;
+                while (!sock.authState.creds.details && attempts < 10) {
+                    await delay(1000);
+                    attempts++;
+                }
+
                 if (!sock.authState.creds.registered) {
-                    await delay(4000);
                     let code;
                     try {
+                        console.log(`[PAIRING] Requesting code for ${number}...`);
                         code = await sock.requestPairingCode(number);
                     } catch (err) {
-                        console.log('[RETRY] Pairing code request failed, retrying in 3s...');
-                        await delay(3000);
+                        console.log('[RETRY] Pairing code request failed, retrying with longer delay...');
+                        await delay(5000);
                         code = await sock.requestPairingCode(number);
                     }
+                    
                     if (code) {
+                        console.log(`[PAIRING] Code generated: ${code}`);
                         const current = sessions.get(sessionKey) || {};
                         sessions.set(sessionKey, { ...current, status: 'awaiting_link', code });
+                    } else {
+                        throw new Error('Failed to generate code after retry');
                     }
                 }
             } catch (e) {
