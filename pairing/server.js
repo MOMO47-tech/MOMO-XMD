@@ -24,13 +24,8 @@ const STATS_FILE = path.join(__dirname, 'stats.json');
 const SESSION_PREFIX = 'MOMO-XMD~';
 const REGISTRY_ORIGIN = 'REG_';
 
-const USER_AGENTS = [
-    ['Chrome (Linux)', 'Chrome', '120.0.6099.144'],
-    ['Chrome (Mac OS)', 'Chrome', '121.0.6167.139'],
-    ['Chrome (Windows)', 'Chrome', '122.0.6261.94'],
-    ['Safari (Mac OS)', 'Safari', '17.2.1'],
-    ['Edge (Windows)', 'Edge', '121.0.2277.128']
-];
+// Use a single, highly stable and trusted browser fingerprint for WhatsApp pairing
+const TRUSTED_BROWSER = ['Mac OS', 'Chrome', '122.0.6261.94'];
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -64,7 +59,7 @@ app.post('/pair', async (req, res) => {
             version,
             printQRInTerminal: false,
             logger: logger,
-            browser: USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)],
+            browser: TRUSTED_BROWSER,
             connectTimeoutMs: 60000,
             defaultQueryTimeoutMs: 60000,
             keepAliveIntervalMs: 30000,
@@ -79,7 +74,7 @@ app.post('/pair', async (req, res) => {
 
         sock.ev.on('connection.update', async (up) => {
             const { connection, lastDisconnect, qr } = up;
-            console.log(`[CONNECTION UPDATE] Status: ${connection}`, up);
+            console.log(`[CONNECTION UPDATE] Status: ${connection}`, JSON.stringify(up, null, 2));
             
             if (connection === 'close') {
                 const reason = lastDisconnect?.error?.output?.statusCode;
@@ -185,6 +180,19 @@ app.get('/api/stats', (req, res) => {
         res.sendFile(STATS_FILE);
     } else {
         res.json({ totalPairings: 0 });
+    }
+});
+
+app.get('/api/reset', (req, res) => {
+    try {
+        sessions.clear();
+        const tempDir = path.join(__dirname, 'temp_sessions');
+        if (fs.existsSync(tempDir)) {
+            fs.rmSync(tempDir, { recursive: true, force: true });
+        }
+        res.json({ success: true, message: 'Sessions cleared successfully' });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
     }
 });
 
