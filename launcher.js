@@ -7,7 +7,8 @@ const config = require('./lib/config');
 const app = express();
 const port = process.env.PORT || 8000;
 
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.static(path.join(__dirname, 'pairing/public')));
 
 // Pairing API routes
