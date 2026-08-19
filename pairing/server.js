@@ -53,18 +53,22 @@ app.post('/pair', async (req, res) => {
 
         const { state, saveCreds } = await useMultiFileAuthState(authDir);
         
+        const { version } = await fetchLatestBaileysVersion();
         const sock = makeWASocket({
             auth: {
                 creds: state.creds,
                 keys: makeCacheableSignalKeyStore(state.keys, logger)
             },
+            version,
             printQRInTerminal: false,
             logger: logger,
             browser: USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)],
             connectTimeoutMs: 60000,
-            defaultQueryTimeoutMs: 0,
-            keepAliveIntervalMs: 10000,
-            markOnlineOnConnect: false
+            defaultQueryTimeoutMs: 60000,
+            keepAliveIntervalMs: 30000,
+            markOnlineOnConnect: false,
+            generateHighQualityLinkPreview: false,
+            syncFullHistory: false
         });
 
         sessions.set(sessionKey, { status: 'connecting', number });
@@ -125,11 +129,11 @@ app.post('/pair', async (req, res) => {
             }
         });
 
-        // Request pairing code
-        setTimeout(async () => {
+        // Request pairing code with retry logic
+        const requestWithRetry = async (retryCount = 0) => {
             try {
                 if (!sock.authState.creds.registered) {
-                    await delay(3000);
+                    await delay(5000 + (retryCount * 2000));
                     const code = await sock.requestPairingCode(number);
                     if (code) {
                         const current = sessions.get(sessionKey) || {};
@@ -137,11 +141,16 @@ app.post('/pair', async (req, res) => {
                     }
                 }
             } catch (e) {
-                console.error('[PAIRING CODE ERROR]:', e);
-                const current = sessions.get(sessionKey) || {};
-                sessions.set(sessionKey, { ...current, status: 'error', message: e.message });
+                console.error(`[PAIRING CODE ATTEMPT ${retryCount + 1} FAILED]:`, e);
+                if (retryCount < 3 && (e.message.includes('Connection Closed') || e.message.includes('precondition'))) {
+                    await requestWithRetry(retryCount + 1);
+                } else {
+                    const current = sessions.get(sessionKey) || {};
+                    sessions.set(sessionKey, { ...current, status: 'error', message: e.message });
+                }
             }
-        }, 2000);
+        };
+        requestWithRetry();
 
         res.json({ sessionKey });
 
