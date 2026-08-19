@@ -12,8 +12,7 @@ const fs = require('fs');
 const path = require('path');
 const { Semaphore } = require('await-semaphore');
 
-const app = express();
-const port = process.env.PORT || 8000;
+const router = express.Router();
 const semaphore = new Semaphore(1);
 const sessions = new Map();
 
@@ -24,8 +23,7 @@ const SESSION_PREFIX = 'MOMO-XMD~';
 // Highly stable browser fingerprint mimicking a real MacOS Chrome instance
 const TRUSTED_BROWSER = ['Mac OS', 'Chrome', '122.0.6261.94'];
 
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+// Middleware and static files are handled by launcher.js
 
 async function getStats() {
     if (fs.existsSync(STATS_FILE)) {
@@ -34,12 +32,12 @@ async function getStats() {
     return { totalPairings: 0, linkedNumbers: [] };
 }
 
-app.get('/stats', async (req, res) => {
+router.get('/stats', async (req, res) => {
     const stats = await getStats();
     res.json(stats);
 });
 
-app.post('/pair', async (req, res) => {
+router.post('/pair', async (req, res) => {
     const { number } = req.body;
     if (!number) return res.status(400).json({ error: 'Number is required' });
 
@@ -164,7 +162,7 @@ app.post('/pair', async (req, res) => {
     }
 });
 
-app.get('/session-status/:sessionKey', (req, res) => {
+router.get('/session-status/:sessionKey', (req, res) => {
     const session = sessions.get(req.params.sessionKey);
     if (!session) return res.status(404).json({ error: 'Session not found' });
     res.json({
@@ -175,7 +173,7 @@ app.get('/session-status/:sessionKey', (req, res) => {
     });
 });
 
-app.get('/reset', (req, res) => {
+router.get('/reset', (req, res) => {
     try {
         sessions.clear();
         const tempDir = path.join(__dirname, 'temp_sessions');
@@ -188,6 +186,4 @@ app.get('/reset', (req, res) => {
     }
 });
 
-app.listen(port, () => {
-    console.log(`[MOMO-XMD PAIRING] Server running on port ${port}`);
-});
+module.exports = router;
