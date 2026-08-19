@@ -38,6 +38,19 @@ router.get('/stats', async (req, res) => {
     res.json(stats);
 });
 
+router.get('/session-registry/:sessionId', (req, res) => {
+    const sessionId = req.params.sessionId;
+    if (fs.existsSync(SESSION_REGISTRY_FILE)) {
+        try {
+            const registry = JSON.parse(fs.readFileSync(SESSION_REGISTRY_FILE, 'utf8') || '{}');
+            if (registry[sessionId]) {
+                return res.json(registry[sessionId]);
+            }
+        } catch (e) {}
+    }
+    res.status(404).json({ error: 'Session not found' });
+});
+
 router.post('/pair', async (req, res) => {
     const { number } = req.body;
     if (!number) return res.status(400).json({ error: 'Number is required' });
