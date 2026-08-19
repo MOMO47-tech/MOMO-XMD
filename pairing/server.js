@@ -25,9 +25,11 @@ const SESSION_PREFIX = 'MOMO-XMD~';
 const REGISTRY_ORIGIN = 'REG_';
 
 const USER_AGENTS = [
-    ['Ubuntu', 'Chrome', '120.0.0.0'],
-    ['Macintosh', 'Chrome', '121.0.0.0'],
-    ['Windows', 'Chrome', '122.0.0.0']
+    ['Chrome (Linux)', 'Chrome', '120.0.6099.144'],
+    ['Chrome (Mac OS)', 'Chrome', '121.0.6167.139'],
+    ['Chrome (Windows)', 'Chrome', '122.0.6261.94'],
+    ['Safari (Mac OS)', 'Safari', '17.2.1'],
+    ['Edge (Windows)', 'Edge', '121.0.2277.128']
 ];
 
 app.use(express.json());
@@ -76,7 +78,17 @@ app.post('/pair', async (req, res) => {
         sock.ev.on('creds.update', saveCreds);
 
         sock.ev.on('connection.update', async (up) => {
-            const { connection, lastDisconnect } = up;
+            const { connection, lastDisconnect, qr } = up;
+            console.log(`[CONNECTION UPDATE] Status: ${connection}`, up);
+            
+            if (connection === 'close') {
+                const reason = lastDisconnect?.error?.output?.statusCode;
+                console.log(`[CONNECTION CLOSED] Reason: ${reason}`, lastDisconnect?.error);
+                const current = sessions.get(sessionKey) || {};
+                if (sessions.get(sessionKey)?.status === 'awaiting_link') {
+                    sessions.set(sessionKey, { ...current, status: 'error', message: 'Pairing failed or timed out. Please try again.' });
+                }
+            }
             
             if (connection === 'open') {
                 const randomPart = Array.from({ length: 22 }, () => Math.floor(Math.random() * 36).toString(36)).join('').toUpperCase();
