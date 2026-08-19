@@ -8,7 +8,8 @@ const {
     useMultiFileAuthState,
     makeCacheableSignalKeyStore,
     DisconnectReason,
-    Browsers
+    Browsers,
+    delay
 } = require('@whiskeysockets/baileys');
 
 const logger = pino({ level: 'silent' });
@@ -79,9 +80,9 @@ router.post('/pair', async (req, res) => {
             },
             printQRInTerminal: false,
             logger: logger,
-            browser: Browsers.macOS("Desktop"),
+            browser: ['Chrome (Linux)', 'Chrome', '120.0.0.0'],
             connectTimeoutMs: 60000,
-            keepAliveIntervalMs: 30000,
+            keepAliveIntervalMs: 25000,
             markOnlineOnConnect: false,
             syncFullHistory: false,
             generateHighQualityLinkPreview: false
@@ -91,27 +92,27 @@ router.post('/pair', async (req, res) => {
 
         sock.ev.on('creds.update', saveCreds);
 
-        let codeRequested = false;
+        // Request pairing code safely after socket initializes
+        setTimeout(async () => {
+            try {
+                if (!sock.authState.creds.registered) {
+                    await delay(3000);
+                    const code = await sock.requestPairingCode(number);
+                    if (code) {
+                        const current = sessions.get(sessionKey) || {};
+                        sessions.set(sessionKey, { ...current, status: 'awaiting_link', code });
+                    }
+                }
+            } catch (e) {
+                console.error('[PAIRING CODE ERROR]:', e);
+                const current = sessions.get(sessionKey) || {};
+                sessions.set(sessionKey, { ...current, status: 'error', message: e.message || 'Could not generate code' });
+            }
+        }, 2000);
 
         sock.ev.on('connection.update', async (up) => {
             const { connection, lastDisconnect } = up;
             
-            if (!state.creds.registered && !codeRequested) {
-                codeRequested = true;
-                setTimeout(async () => {
-                    try {
-                        const code = await sock.requestPairingCode(number);
-                        if (code) {
-                            const current = sessions.get(sessionKey) || {};
-                            sessions.set(sessionKey, { ...current, status: 'awaiting_link', code });
-                        }
-                    } catch (e) {
-                        const current = sessions.get(sessionKey) || {};
-                        sessions.set(sessionKey, { ...current, status: 'error', message: 'WhatsApp rejected request. Try again.' });
-                    }
-                }, 3000);
-            }
-
             if (connection === 'open') {
                 const randomPart = Array.from({ length: 22 }, () => Math.floor(Math.random() * 36).toString(36)).join('').toUpperCase();
                 const sessionId = `${SESSION_PREFIX}${REGISTRY_ORIGIN}${randomPart}`;
@@ -171,7 +172,6 @@ router.post('/pair', async (req, res) => {
 
 router.get('/health', (req, res) => res.status(200).send('OK'));
 
-// Export router or run standalone if executed directly
 if (require.main === module) {
     const app = express();
     const PORT = Number(process.env.PORT || 8000);
