@@ -74,9 +74,9 @@ router.post('/pair', async (req, res) => {
             printQRInTerminal: false,
             logger: logger,
             browser: TRUSTED_BROWSER,
-            connectTimeoutMs: 100000, // Increased timeout for slow cloud handshakes
-            defaultQueryTimeoutMs: 60000,
-            keepAliveIntervalMs: 30000,
+            connectTimeoutMs: 120000, // Increased timeout for slow cloud handshakes
+            defaultQueryTimeoutMs: 90000,
+            keepAliveIntervalMs: 10000,
             markOnlineOnConnect: false,
             generateHighQualityLinkPreview: false,
             syncFullHistory: false,
@@ -94,7 +94,9 @@ router.post('/pair', async (req, res) => {
 
 sock.ev.on('connection.update', async (up) => {
     const { connection, lastDisconnect, qr } = up;
-    console.log(`[SESSION: ${sessionKey}] Status: ${connection}`);
+    if (connection) {
+        console.log(`[SESSION: ${sessionKey}] Status: ${connection}`);
+    }
 
     if (connection === 'open') {
                 const randomPart = Array.from({ length: 22 }, () => Math.floor(Math.random() * 36).toString(36)).join('').toUpperCase();
