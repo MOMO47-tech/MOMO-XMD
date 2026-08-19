@@ -21,8 +21,8 @@ const SESSION_REGISTRY_FILE = path.join(__dirname, 'sessions.json');
 const STATS_FILE = path.join(__dirname, 'stats.json');
 const SESSION_PREFIX = 'MOMO-XMD~';
 
-// Highly stable browser fingerprint mimicking a real MacOS Chrome instance
-const TRUSTED_BROWSER = Browsers.ubuntu("Chrome");
+// Highly stable browser fingerprint mimicking Android Chrome to bypass Heroku IP restrictions
+const TRUSTED_BROWSER = ["Chrome (Linux)", "Chrome", "122.0.6261.64"];
 
 // Middleware and static files are handled by launcher.js
 
@@ -99,10 +99,10 @@ router.post('/pair', async (req, res) => {
             markOnlineOnConnect: false,
             generateHighQualityLinkPreview: false,
             syncFullHistory: false,
-            // Enhanced stealth options
+            // Enhanced stealth options for mobile/cloud stability
             options: {
                 headers: {
-                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+                    'User-Agent': 'Mozilla/5.0 (Linux; Android 14; SM-S928B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.6261.64 Mobile Safari/537.36'
                 }
             }
         });
