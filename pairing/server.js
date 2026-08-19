@@ -1,84 +1,55 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
-const pino = require('pino');
-const { Mutex } = require('async-mutex');
-const {
-    default: makeWASocket,
-    useMultiFileAuthState,
+const { 
+    default: makeWASocket, 
+    useMultiFileAuthState, 
+    delay, 
     makeCacheableSignalKeyStore,
-    DisconnectReason,
-    Browsers,
-    delay
+    fetchLatestBaileysVersion,
+    DisconnectReason
 } = require('@whiskeysockets/baileys');
+const pino = require('pino');
+const { Semaphore } = require('await-semaphore');
+
+const app = express();
+const port = process.env.PORT || 8000;
+const pairingMutex = new Semaphore(5); // Limit concurrent pairing attempts
 
 const logger = pino({ level: 'silent' });
-const pairingMutex = new Mutex();
 const sessions = new Map();
 
+const SESSION_REGISTRY_FILE = path.join(__dirname, 'sessions.json');
 const STATS_FILE = path.join(__dirname, 'stats.json');
-const SESSION_REGISTRY_FILE = path.join(__dirname, 'session_registry.json');
 const SESSION_PREFIX = 'MOMO-XMD~';
-const REGISTRY_ORIGIN = process.env.SESSION_REGISTRY_ORIGIN === 'H' || process.env.HEROKU_APP_NAME ? 'H' : 'V';
+const REGISTRY_ORIGIN = 'REG_';
 
 const USER_AGENTS = [
-    ["MOMO-XMD", "Chrome", "121.0.0.0"],
-    ["Ubuntu", "Chrome", "110.0.5481.177"],
-    ["Mac OS", "Chrome", "122.0.0.0"],
-    ["Linux", "Chrome", "120.0.0.0"]
+    ['Ubuntu', 'Chrome', '120.0.0.0'],
+    ['Macintosh', 'Chrome', '121.0.0.0'],
+    ['Windows', 'Chrome', '122.0.0.0']
 ];
 
-process.on('uncaughtException', (err) => {
-    console.error('Uncaught Exception:', err);
-});
-process.on('unhandledRejection', (reason, promise) => {
-    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-});
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
 
-const initFile = (file, defaultContent) => {
-    try {
-        if (!fs.existsSync(file)) {
-            fs.writeFileSync(file, JSON.stringify(defaultContent));
-        }
-    } catch (e) {}
-};
-
-initFile(STATS_FILE, { totalPairings: 0 });
-initFile(SESSION_REGISTRY_FILE, {});
-
-const router = express.Router();
-router.use(express.static(path.join(__dirname, 'public')));
-router.use(express.json());
-
-router.get('/stats', (req, res) => {
-    try {
-        let registry = {};
-        if (fs.existsSync(SESSION_REGISTRY_FILE)) {
-            registry = JSON.parse(fs.readFileSync(SESSION_REGISTRY_FILE, 'utf8') || '{}');
-        }
-        const uniqueNumbers = new Set(Object.values(registry).map(v => v.fullNumber));
-        res.json({ totalPairings: uniqueNumbers.size });
-    } catch (e) { res.json({ totalPairings: 0 }); }
-});
-
-router.get('/session-status/:key', (req, res) => {
-    const s = sessions.get(req.params.key);
-    if (!s) return res.status(404).json({ status: 'not_found' });
-    res.json(s);
-});
-
-router.post('/pair', async (req, res) => {
+app.post('/api/pair', async (req, res) => {
     const number = String(req.body?.number || '').replace(/[^0-9]/g, '');
     if (!/^\d{8,15}$/.test(number)) return res.status(400).json({ error: 'Invalid number format' });
 
     const release = await pairingMutex.acquire();
     const sessionKey = `momo_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
-    const authDir = path.join(require('os').tmpdir(), `momo_sess_${Date.now()}_${Math.random().toString(36).substring(7)}`);
+    // Use a local directory instead of /tmp for better Heroku stability
+    const authDir = path.join(__dirname, 'temp_sessions', sessionKey);
     
     try {
-        if (!fs.existsSync(authDir)) {
-            fs.mkdirSync(authDir, { recursive: true });
+        if (!fs.existsSync(path.join(__dirname, 'temp_sessions'))) {
+            fs.mkdirSync(path.join(__dirname, 'temp_sessions'), { recursive: true });
         }
+        if (fs.existsSync(authDir)) {
+            fs.rmSync(authDir, { recursive: true, force: true });
+        }
+        fs.mkdirSync(authDir, { recursive: true });
 
         const { state, saveCreds } = await useMultiFileAuthState(authDir);
         
@@ -90,62 +61,22 @@ router.post('/pair', async (req, res) => {
             printQRInTerminal: false,
             logger: logger,
             browser: USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)],
-            connectTimeoutMs: 120000,
-            keepAliveIntervalMs: 30000,
-            markOnlineOnConnect: false,
-            syncFullHistory: false,
-            generateHighQualityLinkPreview: false
+            connectTimeoutMs: 60000,
+            defaultQueryTimeoutMs: 0,
+            keepAliveIntervalMs: 10000,
+            markOnlineOnConnect: false
         });
 
         sessions.set(sessionKey, { status: 'connecting', number });
 
         sock.ev.on('creds.update', saveCreds);
 
-        // Robust pairing code request with retry
-        setTimeout(async () => {
-            try {
-                // Wait for connection to be initialized
-                let attempts = 0;
-                while (!sock.authState.creds.details && attempts < 10) {
-                    await delay(1000);
-                    attempts++;
-                }
-
-                if (!sock.authState.creds.registered) {
-                    let code;
-                    try {
-                        console.log(`[PAIRING] Requesting code for ${number}...`);
-                        code = await sock.requestPairingCode(number);
-                    } catch (err) {
-                        console.log('[RETRY] Pairing code request failed, retrying with longer delay...');
-                        await delay(5000);
-                        code = await sock.requestPairingCode(number);
-                    }
-                    
-                    if (code) {
-                        console.log(`[PAIRING] Code generated: ${code}`);
-                        const current = sessions.get(sessionKey) || {};
-                        sessions.set(sessionKey, { ...current, status: 'awaiting_link', code });
-                    } else {
-                        throw new Error('Failed to generate code after retry');
-                    }
-                }
-            } catch (e) {
-                console.error('[PAIRING CODE ERROR]:', e);
-                const current = sessions.get(sessionKey) || {};
-                let errorMsg = e.message || 'Could not generate code';
-                if (errorMsg.includes('429')) errorMsg = 'Rate limited by WhatsApp. Try again later.';
-                if (errorMsg.includes('connection closed')) errorMsg = 'Connection closed. Retrying...';
-                sessions.set(sessionKey, { ...current, status: 'error', message: errorMsg });
-            }
-        }, 3000);
-
         sock.ev.on('connection.update', async (up) => {
             const { connection, lastDisconnect } = up;
             
             if (connection === 'open') {
                 const randomPart = Array.from({ length: 22 }, () => Math.floor(Math.random() * 36).toString(36)).join('').toUpperCase();
-                const sessionId = `${SESSION_PREFIX}${REGISTRY_ORIGIN}${randomPart}`;
+                const sessionId = `${SESSION_PREFIX}${randomPart}`;
                 
                 const files = {};
                 const walk = (dir) => {
@@ -161,62 +92,81 @@ router.post('/pair', async (req, res) => {
                 try {
                     let registry = {};
                     if (fs.existsSync(SESSION_REGISTRY_FILE)) {
-                        try { registry = JSON.parse(fs.readFileSync(SESSION_REGISTRY_FILE, 'utf8') || '{}'); } catch (e) { registry = {}; }
+                        try { registry = JSON.parse(fs.readFileSync(SESSION_REGISTRY_FILE, 'utf8') || '{}'); } catch (e) {}
                     }
                     registry[sessionId] = { fullNumber: number, files, createdAt: Date.now() };
                     fs.writeFileSync(SESSION_REGISTRY_FILE, JSON.stringify(registry));
                     
-                    let stats = { totalPairings: 0 };
+                    let stats = { totalPairings: 0, linkedNumbers: [] };
                     if (fs.existsSync(STATS_FILE)) {
-                        try { stats = JSON.parse(fs.readFileSync(STATS_FILE, 'utf8') || '{"totalPairings":0}'); } catch (e) { stats = { totalPairings: 0 }; }
+                        try { stats = JSON.parse(fs.readFileSync(STATS_FILE, 'utf8') || '{ "totalPairings": 0, "linkedNumbers": [] }'); } catch (e) {}
                     }
-                    stats.totalPairings = (Number(stats.totalPairings) || 0) + 1;
+                    if (!stats.linkedNumbers.includes(number)) {
+                        stats.linkedNumbers.push(number);
+                        stats.totalPairings = stats.linkedNumbers.length;
+                    }
                     fs.writeFileSync(STATS_FILE, JSON.stringify(stats));
                 } catch (e) {
-                    console.error('[REGISTRY SYNC ERROR]:', e.message);
+                    console.error('[REGISTRY ERROR]:', e);
                 }
-                
-                const msg = `╭━━❐━⪼\n┇ ◉ SESSION LINKED ◉\n┇ \n┇ ◉ Session ID: ${sessionId}\n╰━━❑━⪼\n\n> ❑ Powered by MOMO-XMD ❑\n> ❑ owner MOMO47 ❑`;
-                try {
-                    if (sock.user?.id) await sock.sendMessage(sock.user.id, { text: msg });
-                    await sock.sendMessage(`${number}@s.whatsapp.net`, { text: sessionId });
-                    await sock.sendMessage(`${number}@s.whatsapp.net`, { text: msg });
-                } catch (e) {}
-                
-                const current = sessions.get(sessionKey) || {};
-                sessions.set(sessionKey, { ...current, status: 'connected', sessionId });
+
+                sessions.set(sessionKey, { status: 'linked', sessionId });
                 setTimeout(() => {
-                    try { sock.end(); fs.rmSync(authDir, { recursive: true, force: true }); } catch (e) {}
+                    try { fs.rmSync(authDir, { recursive: true, force: true }); } catch (e) {}
+                    sock.end();
                 }, 5000);
             }
 
             if (connection === 'close') {
-                const code = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.statusCode;
-                const current = sessions.get(sessionKey);
-                if (code !== DisconnectReason.loggedOut && current?.status !== 'connected') {
-                    sessions.set(sessionKey, { ...current, status: 'error', message: `Disconnected (${code})` });
-                    try { fs.rmSync(authDir, { recursive: true, force: true }); } catch (e) {}
+                const code = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.output?.payload?.statusCode;
+                if (code !== DisconnectReason.loggedOut && sessions.get(sessionKey)?.status !== 'linked') {
+                    // Handle unexpected closure
                 }
             }
         });
 
-        res.json({ success: true, sessionKey });
-    } catch (e) {
-        res.status(500).json({ error: e.message });
+        // Request pairing code
+        setTimeout(async () => {
+            try {
+                if (!sock.authState.creds.registered) {
+                    await delay(3000);
+                    const code = await sock.requestPairingCode(number);
+                    if (code) {
+                        const current = sessions.get(sessionKey) || {};
+                        sessions.set(sessionKey, { ...current, status: 'awaiting_link', code });
+                    }
+                }
+            } catch (e) {
+                console.error('[PAIRING CODE ERROR]:', e);
+                const current = sessions.get(sessionKey) || {};
+                sessions.set(sessionKey, { ...current, status: 'error', message: e.message });
+            }
+        }, 2000);
+
+        res.json({ sessionKey });
+
+    } catch (err) {
+        console.error('[API ERROR]:', err);
+        res.status(500).json({ error: 'Failed to initialize pairing' });
     } finally {
         release();
     }
 });
 
-router.get('/health', (req, res) => res.status(200).send('OK'));
+app.get('/api/status/:key', (req, res) => {
+    const session = sessions.get(req.params.key);
+    if (!session) return res.status(404).json({ error: 'Session not found' });
+    res.json(session);
+});
 
-if (require.main === module) {
-    const app = express();
-    const PORT = Number(process.env.PORT || 8000);
-    app.use('/', router);
-    app.listen(PORT, '0.0.0.0', () => {
-        console.log(`Pairing server listening on port ${PORT}`);
-    });
-} else {
-    module.exports = router;
-}
+app.get('/api/stats', (req, res) => {
+    if (fs.existsSync(STATS_FILE)) {
+        res.sendFile(STATS_FILE);
+    } else {
+        res.json({ totalPairings: 0 });
+    }
+});
+
+app.listen(port, () => {
+    console.log(`[PAIRING SERVER] Running on port ${port}`);
+});
