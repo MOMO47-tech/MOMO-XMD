@@ -4,7 +4,8 @@ const {
     useMultiFileAuthState,
     makeCacheableSignalKeyStore,
     DisconnectReason,
-    Browsers
+    Browsers,
+    fetchLatestBaileysVersion
 } = require("@whiskeysockets/baileys");
 
 const pino = require("pino");
@@ -218,8 +219,10 @@ router.post("/pair", async (req, res) => {
          * Baileys version.
          */
 
-        const sock = makeWASocket({
+        const { version } = await fetchLatestBaileysVersion();
 
+        const sock = makeWASocket({
+            version,
             auth: {
                 creds: state.creds,
 
