@@ -11,8 +11,6 @@ const {
     Browsers
 } = require('@whiskeysockets/baileys');
 
-const app = express();
-const PORT = Number(process.env.PORT || 8000);
 const logger = pino({ level: 'silent' });
 const pairingMutex = new Mutex();
 const sessions = new Map();
@@ -40,10 +38,11 @@ const initFile = (file, defaultContent) => {
 initFile(STATS_FILE, { totalPairings: 0 });
 initFile(SESSION_REGISTRY_FILE, {});
 
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.json());
+const router = express.Router();
+router.use(express.static(path.join(__dirname, 'public')));
+router.use(express.json());
 
-app.get('/stats', (req, res) => {
+router.get('/stats', (req, res) => {
     try {
         const registry = JSON.parse(fs.readFileSync(SESSION_REGISTRY_FILE, 'utf8') || '{}');
         const stats = JSON.parse(fs.readFileSync(STATS_FILE, 'utf8') || '{"totalPairings":0}');
@@ -51,19 +50,18 @@ app.get('/stats', (req, res) => {
     } catch (e) { res.json({ totalPairings: 0 }); }
 });
 
-app.get('/session-status/:key', (req, res) => {
+router.get('/session-status/:key', (req, res) => {
     const s = sessions.get(req.params.key);
     if (!s) return res.status(404).json({ status: 'not_found' });
     res.json(s);
 });
 
-app.post('/pair', async (req, res) => {
+router.post('/pair', async (req, res) => {
     const number = String(req.body?.number || '').replace(/[^0-9]/g, '');
     if (!/^\d{8,15}$/.test(number)) return res.status(400).json({ error: 'Invalid number format' });
 
     const release = await pairingMutex.acquire();
     const sessionKey = `momo_${Date.now()}`;
-    // Use /tmp for Heroku compatibility to avoid permission issues
     const authDir = path.join('/tmp', `session_${sessionKey}`);
     
     try {
@@ -81,7 +79,7 @@ app.post('/pair', async (req, res) => {
             },
             printQRInTerminal: false,
             logger: logger,
-            browser: ["macOS", "Safari", "17.0"],
+            browser: Browsers.macOS("Desktop"),
             connectTimeoutMs: 60000,
             keepAliveIntervalMs: 30000,
             markOnlineOnConnect: false,
@@ -171,8 +169,16 @@ app.post('/pair', async (req, res) => {
     }
 });
 
-app.get('/health', (req, res) => res.status(200).send('OK'));
+router.get('/health', (req, res) => res.status(200).send('OK'));
 
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Pairing server listening on port ${PORT}`);
-});
+// Export router or run standalone if executed directly
+if (require.main === module) {
+    const app = express();
+    const PORT = Number(process.env.PORT || 8000);
+    app.use('/', router);
+    app.listen(PORT, '0.0.0.0', () => {
+        console.log(`Pairing server listening on port ${PORT}`);
+    });
+} else {
+    module.exports = router;
+}
