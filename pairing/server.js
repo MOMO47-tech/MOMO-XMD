@@ -133,7 +133,9 @@ sock.ev.on('connection.update', async (up) => {
                 
                 // Cleanup socket after successful link
                 await delay(5000);
-                sock.logout();
+                // DO NOT use logout() as it invalidates the session on WhatsApp server
+                if (sock.ws) sock.ws.close();
+                await delay(2000);
                 fs.rmSync(authDir, { recursive: true, force: true });
             }
 
