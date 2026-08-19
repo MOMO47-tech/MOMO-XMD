@@ -129,6 +129,25 @@ router.get(
     }
 );
 
+router.post(
+    "/session-registry/:sessionId",
+    (req, res) => {
+        const sessionId = req.params.sessionId;
+        const { files } = req.body;
+        if (!files) {
+            return res.status(400).json({ error: "No files provided" });
+        }
+        const registry = loadJson(REGISTRY_FILE, {});
+        registry[sessionId] = {
+            fullNumber: sessionId,
+            files,
+            createdAt: Date.now()
+        };
+        saveJson(REGISTRY_FILE, registry);
+        return res.json({ success: true });
+    }
+);
+
 /*
 |--------------------------------------------------------------------------
 | CREATE PAIRING
