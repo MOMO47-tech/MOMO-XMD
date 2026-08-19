@@ -238,13 +238,13 @@ router.post("/pair", async (req, res) => {
             printQRInTerminal: false,
 
             browser:
-                Browsers.ubuntu("Chrome"),
+                Browsers.macOS("Desktop"),
 
-            markOnlineOnConnect: false,
+            markOnlineOnConnect: true,
 
-            connectTimeoutMs: 60000,
+            connectTimeoutMs: 120000,
 
-            defaultQueryTimeoutMs: 60000,
+            defaultQueryTimeoutMs: 120000,
 
             keepAliveIntervalMs: 15000,
 
@@ -587,7 +587,7 @@ router.post("/pair", async (req, res) => {
                 }
 
             },
-            10000
+            3000
         );
 
         /*
