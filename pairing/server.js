@@ -238,7 +238,7 @@ router.post("/pair", async (req, res) => {
             printQRInTerminal: false,
 
             browser:
-                Browsers.macOS("Desktop"),
+                Browsers.ubuntu("Chrome"),
 
             markOnlineOnConnect: true,
 
@@ -275,19 +275,51 @@ router.post("/pair", async (req, res) => {
         |--------------------------------------------------------------------------
         */
 
+        let codeRequested = false;
+
         sock.ev.on(
             "connection.update",
             async (update) => {
 
                 const {
                     connection,
-                    lastDisconnect
+                    lastDisconnect,
+                    qr
                 } = update;
 
                 if (connection) {
                     console.log(
                         `[PAIRING:${sessionKey}] connection=${connection}`
                     );
+                }
+
+                if ((connection === "connecting" || qr) && !codeRequested && !sock.authState.creds.registered) {
+                    codeRequested = true;
+                    try {
+                        console.log(`[PAIRING:${sessionKey}] Requesting real WhatsApp pairing code for ${number}`);
+                        const code = await sock.requestPairingCode(number);
+                        if (!code) {
+                            throw new Error("WhatsApp did not return a pairing code");
+                        }
+                        sessions.set(
+                            sessionKey,
+                            {
+                                status: "awaiting_link",
+                                number,
+                                code,
+                                sock,
+                                authDir,
+                                createdAt: Date.now()
+                            }
+                        );
+                        console.log(`[PAIRING:${sessionKey}] REAL CODE: ${code}`);
+                    } catch (error) {
+                        console.error(`[PAIRING:${sessionKey}] CODE ERROR:`, error?.message || error);
+                        sessions.set(sessionKey, {
+                            status: "error",
+                            message: error.message
+                        });
+                    }
                 }
 
                 /*
@@ -516,79 +548,7 @@ router.post("/pair", async (req, res) => {
         |--------------------------------------------------------------------------
         */
 
-        // Request code after a short delay to ensure socket is ready
-        setTimeout(
-            async () => {
-
-                try {
-                    // Check if still connected
-                    if (sessions.get(sessionKey)?.status === "error") {
-                        console.log(`[PAIRING:${sessionKey}] Socket already closed, skipping code request`);
-                        return;
-                    }
-
-                    if (sock.authState.creds.registered) {
-                        console.log(`[PAIRING:${sessionKey}] Already registered`);
-                        return;
-                    }
-
-                    console.log(`[PAIRING:${sessionKey}] Requesting real WhatsApp pairing code for ${number}`);
-
-                    const code = await sock.requestPairingCode(number);
-
-                    if (!code) {
-                        throw new Error(
-                            "WhatsApp did not return a pairing code"
-                        );
-                    }
-
-                    sessions.set(
-                        sessionKey,
-                        {
-                            status:
-                                "awaiting_link",
-                            number,
-                            code,
-                            sock,
-                            authDir,
-                            createdAt:
-                                Date.now()
-                        }
-                    );
-
-                    console.log(
-                        `[PAIRING:${sessionKey}] REAL CODE: ${code}`
-                    );
-
-                } catch (error) {
-
-                    console.error(
-                        `[PAIRING:${sessionKey}] CODE ERROR:`,
-                        error?.stack ||
-                        error?.message ||
-                        error
-                    );
-
-                    const current =
-                        sessions.get(
-                            sessionKey
-                        ) || {};
-
-                    sessions.set(
-                        sessionKey,
-                        {
-                            ...current,
-                            status: "error",
-                            message:
-                                error.message
-                        }
-                    );
-
-                }
-
-            },
-            3000
-        );
+        // Event-driven code request is handled above on connection === 'connecting'
 
         /*
         |--------------------------------------------------------------------------
@@ -675,3 +635,16 @@ router.get("/health", (req, res) => {
 });
 
 module.exports = router;
+
+if (require.main === module) {
+    const express = require('express');
+    const app = express();
+    app.use(express.json({ limit: '50mb' }));
+    app.use(express.urlencoded({ limit: '50mb', extended: true }));
+    app.use(express.static(path.join(__dirname, 'public')));
+    app.use('/', router);
+    const port = process.env.PORT || 8000;
+    app.listen(port, '0.0.0.0', () => {
+        console.log(`[MOMO-XMD Pairing Standalone] Running on port ${port}`);
+    });
+}
