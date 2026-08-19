@@ -51,6 +51,25 @@ router.get('/session-registry/:sessionId', (req, res) => {
     res.status(404).json({ error: 'Session not found' });
 });
 
+router.post('/session-registry/:sessionId', (req, res) => {
+    const sessionId = req.params.sessionId;
+    const { files, fullNumber } = req.body;
+    if (!files) return res.status(400).json({ error: 'Files are required' });
+    try {
+        let registry = {};
+        if (fs.existsSync(SESSION_REGISTRY_FILE)) {
+            registry = JSON.parse(fs.readFileSync(SESSION_REGISTRY_FILE, 'utf8') || '{}');
+        }
+        registry[sessionId] = { fullNumber: fullNumber || 'Unknown', files, createdAt: Date.now() };
+        fs.writeFileSync(SESSION_REGISTRY_FILE, JSON.stringify(registry));
+        console.log(`[REGISTRY] ✅ Session ${sessionId} successfully synced/stored via POST.`);
+        res.json({ success: true });
+    } catch (e) {
+        console.error('[REGISTRY ERROR]:', e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
 router.post('/pair', async (req, res) => {
     const { number } = req.body;
     if (!number) return res.status(400).json({ error: 'Number is required' });
