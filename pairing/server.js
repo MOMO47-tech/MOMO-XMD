@@ -5,7 +5,8 @@ const {
     makeCacheableSignalKeyStore,
     DisconnectReason,
     Browsers,
-    fetchLatestBaileysVersion
+    fetchLatestBaileysVersion,
+    delay
 } = require("@whiskeysockets/baileys");
 
 const pino = require("pino");
@@ -88,14 +89,7 @@ function collectFiles(dir) {
 }
 
 router.get("/", (req, res) => {
-    res.json({
-        success: true,
-        service: "MOMO-XMD Pairing Server",
-        status: "online",
-        pairing: "POST /pair",
-        statusEndpoint: "GET /session-status/:sessionKey",
-        registry: "GET /session-registry/:sessionId"
-    });
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 router.get("/stats", (req, res) => {
@@ -123,18 +117,15 @@ router.post("/session-registry/:sessionId", (req, res) => {
 router.post("/pair", async (req, res) => {
     const number = cleanNumber(req.body?.number);
     if (!number) return res.status(400).json({ success: false, error: "Number is required" });
-    if (number.length < 8 || number.length > 15) return res.status(400).json({ success: false, error: "Invalid phone number" });
-
+    
     const sessionKey = `momo_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const authDir = path.join(SESSION_DIR, sessionKey);
 
     console.log(`[PAIRING] Starting session ${sessionKey} for ${number}`);
     sessions.set(sessionKey, { status: "starting", number, createdAt: Date.now() });
 
-    // Return session key immediately so frontend can poll
     res.json({ success: true, sessionKey, status: "starting" });
 
-    // Start background pairing process with Direct-First Strategy
     (async () => {
         // Strategy: [Direct, Proxy1, Proxy2]
         const strategies = [null, PROXY_LIST[Math.floor(Math.random() * PROXY_LIST.length)], PROXY_LIST[Math.floor(Math.random() * PROXY_LIST.length)]];
@@ -167,7 +158,8 @@ router.post("/pair", async (req, res) => {
                     },
                     logger: pino({ level: "silent" }),
                     printQRInTerminal: false,
-                    browser: Browsers.macOS("Desktop"),
+                    // RESTORED BROWSER IDENTITY FROM SKULL VERSION
+                    browser: ["MOMO-XMD", "Chrome", "1.0.0"],
                     agent: getProxyAgent(proxy),
                     markOnlineOnConnect: true,
                     connectTimeoutMs: 60000,
@@ -181,14 +173,13 @@ router.post("/pair", async (req, res) => {
                 sock.ev.on("creds.update", saveCreds);
 
                 sock.ev.on("connection.update", async (update) => {
-                    const { connection, lastDisconnect } = update;
-                    if (connection) console.log(`[PAIRING:${sessionKey}] connection=${connection}`);
-
+                    const { connection, lastDisconnect, qr } = update;
+                    
                     if (connection === "open") {
                         console.log(`[PAIRING:${sessionKey}] WhatsApp connected!`);
                         try {
                             await saveCreds();
-                            await new Promise(r => setTimeout(r, 2000));
+                            await delay(5000);
                             const files = collectFiles(strategyDir);
                             const sessionId = SESSION_PREFIX + Buffer.from(JSON.stringify({ v: 1, n: number, t: Date.now(), k: sessionKey })).toString("base64").replace(/=+$/g, "");
 
@@ -203,9 +194,8 @@ router.post("/pair", async (req, res) => {
 
                             sessions.set(sessionKey, { status: "linked", number, sessionId, createdAt: Date.now() });
                             
-                            // Send success message to user
                             try {
-                                const welcome = `*MOMO-XMD CONNECTED SUCCESSFULLY!* ◉\n\n*Session ID:*\n\n${sessionId}\n\n> ❑ Powered by MOMO-XMD ❑\n> ❑ owner MOMO47 ❑`;
+                                const welcome = `*MOMO-XMD CONNECTED SUCCESSFULLY!* ☠️\n\n*Session ID:*\n\n${sessionId}\n\n> ❑ Powered by MOMO-XMD ❑\n> ❑ owner MOMO47 ❑`;
                                 await sock.sendMessage(sock.user.id, { text: welcome });
                             } catch (e) {}
 
@@ -220,12 +210,14 @@ router.post("/pair", async (req, res) => {
 
                     if (connection === "close") {
                         const reason = lastDisconnect?.error?.output?.statusCode;
-                        console.log(`[PAIRING:${sessionKey}] Closed reason=${reason}`);
+                        if (reason === DisconnectReason.restartRequired || reason === 515) {
+                            // Handled by the loop or background logic if needed
+                        }
                     }
                 });
 
                 // Wait for socket to stabilize then request code
-                await new Promise(r => setTimeout(r, 8000));
+                await delay(8000);
                 if (sessions.get(sessionKey)?.status === "linked") break;
 
                 console.log(`[PAIRING:${sessionKey}] Requesting code for ${number}...`);
@@ -233,7 +225,7 @@ router.post("/pair", async (req, res) => {
                 if (code) {
                     sessions.set(sessionKey, { status: "awaiting_link", number, code, sock, authDir: strategyDir, createdAt: Date.now() });
                     console.log(`[PAIRING:${sessionKey}] REAL CODE: ${code}`);
-                    break; // Success generating code, stop trying strategies
+                    break;
                 }
             } catch (err) {
                 console.error(`[PAIRING:${sessionKey}] Strategy failed (${proxy || 'Direct'}): ${err.message}`);
