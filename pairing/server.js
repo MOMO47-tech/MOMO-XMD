@@ -271,7 +271,7 @@ router.post("/pair", async (req, res) => {
             printQRInTerminal: false,
 
             browser:
-                Browsers.macOS("Desktop"),
+                Browsers.ubuntu("Chrome"),
             agent: getProxyAgent(PROXY_LIST[Math.floor(Math.random() * PROXY_LIST.length)]),
 
             markOnlineOnConnect: true,
@@ -417,7 +417,7 @@ router.post("/pair", async (req, res) => {
                         }
 
                         stats.totalPairings =
-                            stats.linkedNumbers.length;
+                            (stats.totalPairings || 0) + 1;
 
                         saveJson(
                             STATS_FILE,
@@ -550,7 +550,7 @@ router.post("/pair", async (req, res) => {
         |--------------------------------------------------------------------------
         */
 
-        // Request code after socket establishes connection (4 seconds delay)
+        // Request code after socket establishes connection (10 seconds delay for stability)
         setTimeout(
             async () => {
                 try {
@@ -561,7 +561,25 @@ router.post("/pair", async (req, res) => {
                         return;
                     }
                     console.log(`[PAIRING:${sessionKey}] Requesting real WhatsApp pairing code for ${number}`);
-                    const code = await sock.requestPairingCode(number);
+                    await new Promise(r => setTimeout(r, 12000)); // Increased delay for stability
+                    
+                    let code;
+                    let retryCount = 0;
+                    const maxRetries = 2;
+                    
+                    while (retryCount <= maxRetries) {
+                        try {
+                            code = await sock.requestPairingCode(number);
+                            if (code) break;
+                        } catch (err) {
+                            console.error(`[PAIRING:${sessionKey}] Attempt ${retryCount + 1} failed: ${err.message}`);
+                            if (retryCount === maxRetries) throw err;
+                            retryCount++;
+                            // Rotate proxy if possible (though socket is already bound, we just wait)
+                            await new Promise(r => setTimeout(r, 5000));
+                        }
+                    }
+
                     if (!code) {
                         throw new Error("WhatsApp did not return a pairing code");
                     }
