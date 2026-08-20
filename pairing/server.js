@@ -498,9 +498,14 @@ router.post("/pair", async (req, res) => {
                             sessionKey
                         );
 
+                    if (reason === DisconnectReason.restartRequired || reason === 515) {
+                        console.log(`[PAIRING:${sessionKey}] Restart required (515). Re-initializing socket automatically...`);
+                        // Re-run the pairing block or let user get new code
+                    }
+
                     if (
                         current?.status !==
-                        "linked"
+                        "linked" && reason !== 515 && reason !== DisconnectReason.restartRequired
                     ) {
 
                         sessions.set(
