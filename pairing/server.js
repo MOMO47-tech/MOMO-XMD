@@ -40,13 +40,11 @@ function getProxyAgent(proxyUrl) {
 }
 
 const router = express.Router();
-
 const sessions = new Map();
 
 const SESSION_DIR = path.join(__dirname, "temp_sessions");
 const REGISTRY_FILE = path.join(__dirname, "sessions.json");
 const STATS_FILE = path.join(__dirname, "stats.json");
-
 const SESSION_PREFIX = "MOMO-XMD~";
 
 if (!fs.existsSync(SESSION_DIR)) {
@@ -67,43 +65,27 @@ function loadJson(file, fallback) {
 }
 
 function saveJson(file, data) {
-    fs.writeFileSync(
-        file,
-        JSON.stringify(data, null, 2)
-    );
+    fs.writeFileSync(file, JSON.stringify(data, null, 2));
 }
 
 function collectFiles(dir) {
     const result = {};
-
     function walk(current) {
         if (!fs.existsSync(current)) return;
-
         for (const name of fs.readdirSync(current)) {
             const full = path.join(current, name);
             const stat = fs.statSync(full);
-
             if (stat.isDirectory()) {
                 walk(full);
             } else {
                 const relative = path.relative(dir, full);
-
-                result[relative] =
-                    fs.readFileSync(full).toString("base64");
+                result[relative] = fs.readFileSync(full).toString("base64");
             }
         }
     }
-
     walk(dir);
-
     return result;
 }
-
-/*
-|--------------------------------------------------------------------------
-| HOME
-|--------------------------------------------------------------------------
-*/
 
 router.get("/", (req, res) => {
     res.json({
@@ -116,587 +98,177 @@ router.get("/", (req, res) => {
     });
 });
 
-/*
-|--------------------------------------------------------------------------
-| STATS
-|--------------------------------------------------------------------------
-*/
-
 router.get("/stats", (req, res) => {
-    const stats = loadJson(STATS_FILE, {
-        totalPairings: 0,
-        linkedNumbers: []
-    });
-
+    const stats = loadJson(STATS_FILE, { totalPairings: 0, linkedNumbers: [] });
     res.json(stats);
 });
 
-/*
-|--------------------------------------------------------------------------
-| SESSION REGISTRY
-|--------------------------------------------------------------------------
-*/
-
-router.get(
-    "/session-registry/:sessionId",
-    (req, res) => {
-
-        const registry =
-            loadJson(REGISTRY_FILE, {});
-
-        const session =
-            registry[req.params.sessionId];
-
-        if (!session) {
-            return res.status(404).json({
-                error: "Session not found"
-            });
-        }
-
-        return res.json(session);
-    }
-);
-
-router.post(
-    "/session-registry/:sessionId",
-    (req, res) => {
-        const sessionId = req.params.sessionId;
-        const { files } = req.body;
-        if (!files) {
-            return res.status(400).json({ error: "No files provided" });
-        }
-        const registry = loadJson(REGISTRY_FILE, {});
-        registry[sessionId] = {
-            fullNumber: sessionId,
-            files,
-            createdAt: Date.now()
-        };
-        saveJson(REGISTRY_FILE, registry);
-        return res.json({ success: true });
-    }
-);
-
-/*
-|--------------------------------------------------------------------------
-| CREATE PAIRING
-|--------------------------------------------------------------------------
-*/
-
-router.post("/pair", async (req, res) => {
-
-    const number = cleanNumber(req.body?.number);
-
-    if (!number) {
-        return res.status(400).json({
-            success: false,
-            error: "Number is required"
-        });
-    }
-
-    if (number.length < 8 || number.length > 15) {
-        return res.status(400).json({
-            success: false,
-            error: "Invalid phone number"
-        });
-    }
-
-    const sessionKey =
-        `momo_${Date.now()}_${Math.random()
-            .toString(36)
-            .slice(2, 8)}`;
-
-    const authDir =
-        path.join(SESSION_DIR, sessionKey);
-
-    console.log(
-        `[PAIRING] Starting session ${sessionKey}`
-    );
-
-    console.log(
-        `[PAIRING] Number: ${number}`
-    );
-
-    sessions.set(sessionKey, {
-        status: "starting",
-        number,
-        createdAt: Date.now()
-    });
-
-    try {
-
-        fs.mkdirSync(
-            authDir,
-            { recursive: true }
-        );
-
-        const {
-            state,
-            saveCreds
-        } = await useMultiFileAuthState(authDir);
-
-        const logger = pino({
-            level: "silent"
-        });
-
-        /*
-         * IMPORTANT:
-         * Do NOT call fetchLatestBaileysVersion().
-         *
-         * Heroku and VPS must use the same installed
-         * Baileys version.
-         */
-
-        let version;
-        try {
-            const fetched = await fetchLatestBaileysVersion();
-            version = fetched.version;
-        } catch (e) {
-            version = [2, 3000, 1015901307];
-        }
-
-        const sock = makeWASocket({
-            version,
-            auth: {
-                creds: state.creds,
-
-                keys:
-                    makeCacheableSignalKeyStore(
-                        state.keys,
-                        logger
-                    )
-            },
-
-            logger,
-
-            printQRInTerminal: false,
-
-            browser:
-                Browsers.ubuntu("Chrome"),
-            agent: getProxyAgent(PROXY_LIST[Math.floor(Math.random() * PROXY_LIST.length)]),
-
-            markOnlineOnConnect: true,
-
-            connectTimeoutMs: 120000,
-
-            defaultQueryTimeoutMs: 120000,
-
-            keepAliveIntervalMs: 15000,
-
-            syncFullHistory: false,
-
-            generateHighQualityLinkPreview: false
-        });
-
-        sessions.set(
-            sessionKey,
-            {
-                status: "connecting",
-                number,
-                sock,
-                authDir,
-                createdAt: Date.now()
-            }
-        );
-
-        sock.ev.on(
-            "creds.update",
-            saveCreds
-        );
-
-        /*
-        |--------------------------------------------------------------------------
-        | CONNECTION
-        |--------------------------------------------------------------------------
-        */
-
-        sock.ev.on(
-            "connection.update",
-            async (update) => {
-
-                const {
-                    connection,
-                    lastDisconnect
-                } = update;
-
-                if (connection) {
-                    console.log(
-                        `[PAIRING:${sessionKey}] connection=${connection}`
-                    );
-                }
-
-                /*
-                |--------------------------------------------------------------------------
-                | SUCCESSFUL LINK
-                |--------------------------------------------------------------------------
-                */
-
-                if (connection === "open") {
-
-                    console.log(
-                        `[PAIRING:${sessionKey}] WhatsApp connected`
-                    );
-
-                    try {
-
-                        await saveCreds();
-
-                        /*
-                         * Give creds.update time to finish.
-                         */
-
-                        await new Promise(
-                            resolve =>
-                                setTimeout(
-                                    resolve,
-                                    2000
-                                )
-                        );
-
-                        const files =
-                            collectFiles(authDir);
-
-                        const sessionId =
-                            SESSION_PREFIX +
-                            Buffer.from(
-                                JSON.stringify({
-                                    v: 1,
-                                    n: number,
-                                    t: Date.now(),
-                                    k: sessionKey
-                                })
-                            )
-                                .toString("base64")
-                                .replace(/=+$/g, "");
-
-                        /*
-                        |--------------------------------------------------------------------------
-                        | SAVE SESSION
-                        |--------------------------------------------------------------------------
-                        */
-
-                        const registry =
-                            loadJson(
-                                REGISTRY_FILE,
-                                {}
-                            );
-
-                        registry[sessionId] = {
-                            fullNumber: number,
-                            files,
-                            createdAt: Date.now()
-                        };
-
-                        saveJson(
-                            REGISTRY_FILE,
-                            registry
-                        );
-
-                        /*
-                        |--------------------------------------------------------------------------
-                        | STATS
-                        |--------------------------------------------------------------------------
-                        */
-
-                        const stats =
-                            loadJson(
-                                STATS_FILE,
-                                {
-                                    totalPairings: 0,
-                                    linkedNumbers: []
-                                }
-                            );
-
-                        if (
-                            !stats.linkedNumbers.includes(
-                                number
-                            )
-                        ) {
-                            stats.linkedNumbers.push(
-                                number
-                            );
-                        }
-
-                        stats.totalPairings =
-                            (stats.totalPairings || 0) + 1;
-
-                        saveJson(
-                            STATS_FILE,
-                            stats
-                        );
-
-                        sessions.set(
-                            sessionKey,
-                            {
-                                status: "linked",
-                                number,
-                                sessionId,
-                                createdAt: Date.now()
-                            }
-                        );
-
-                        console.log(
-                            `[PAIRING:${sessionKey}] LINKED SUCCESSFULLY`
-                        );
-
-                        console.log(
-                            `[PAIRING:${sessionKey}] Session ID: ${sessionId}`
-                        );
-
-                        /*
-                         * Keep socket alive briefly.
-                         * Do NOT logout.
-                         */
-
-                        setTimeout(
-                            () => {
-
-                                try {
-                                    sock.end(
-                                        undefined
-                                    );
-                                } catch {}
-
-                                /*
-                                 * IMPORTANT:
-                                 * We do not delete registry.
-                                 *
-                                 * The saved session is what
-                                 * the Heroku bot restores.
-                                 */
-
-                                try {
-                                    if (
-                                        fs.existsSync(
-                                            authDir
-                                        )
-                                    ) {
-                                        fs.rmSync(
-                                            authDir,
-                                            {
-                                                recursive: true,
-                                                force: true
-                                            }
-                                        );
-                                    }
-                                } catch {}
-
-                            },
-                            10000
-                        );
-
-                    } catch (error) {
-
-                        console.error(
-                            `[PAIRING:${sessionKey}] SAVE ERROR`,
-                            error
-                        );
-
-                        sessions.set(
-                            sessionKey,
-                            {
-                                status: "error",
-                                number,
-                                message:
-                                    error.message
-                            }
-                        );
-                    }
-                }
-
-                /*
-                |--------------------------------------------------------------------------
-                | CONNECTION CLOSED
-                |--------------------------------------------------------------------------
-                */
-
-                if (connection === "close") {
-
-                    const reason =
-                        lastDisconnect
-                            ?.error
-                            ?.output
-                            ?.statusCode;
-
-                    console.log(
-                        `[PAIRING:${sessionKey}] CLOSED reason=${reason}`
-                    );
-
-                    const current =
-                        sessions.get(
-                            sessionKey
-                        );
-
-                    if (
-                        current?.status !==
-                        "linked"
-                    ) {
-
-                        sessions.set(
-                            sessionKey,
-                            {
-                                ...current,
-                                status: "error",
-                                message: `Connection closed (${reason})`
-                            }
-                        );
-                    }
-                }
-            }
-        );
-
-        /*
-        |--------------------------------------------------------------------------
-        | REQUEST REAL WHATSAPP PAIRING CODE
-        |--------------------------------------------------------------------------
-        */
-
-        // Request code after socket establishes connection (10 seconds delay for stability)
-        setTimeout(
-            async () => {
-                try {
-                    if (sessions.get(sessionKey)?.status === "error") {
-                        return;
-                    }
-                    if (sock.authState.creds.registered) {
-                        return;
-                    }
-                    console.log(`[PAIRING:${sessionKey}] Requesting real WhatsApp pairing code for ${number}`);
-                    await new Promise(r => setTimeout(r, 12000)); // Increased delay for stability
-                    
-                    let code;
-                    let retryCount = 0;
-                    const maxRetries = 2;
-                    
-                    while (retryCount <= maxRetries) {
-                        try {
-                            code = await sock.requestPairingCode(number);
-                            if (code) break;
-                        } catch (err) {
-                            console.error(`[PAIRING:${sessionKey}] Attempt ${retryCount + 1} failed: ${err.message}`);
-                            if (retryCount === maxRetries) throw err;
-                            retryCount++;
-                            // Rotate proxy if possible (though socket is already bound, we just wait)
-                            await new Promise(r => setTimeout(r, 5000));
-                        }
-                    }
-
-                    if (!code) {
-                        throw new Error("WhatsApp did not return a pairing code");
-                    }
-                    sessions.set(
-                        sessionKey,
-                        {
-                            status: "awaiting_link",
-                            number,
-                            code,
-                            sock,
-                            authDir,
-                            createdAt: Date.now()
-                        }
-                    );
-                    console.log(`[PAIRING:${sessionKey}] REAL CODE: ${code}`);
-                } catch (error) {
-                    console.error(`[PAIRING:${sessionKey}] CODE ERROR:`, error?.message || error);
-                    sessions.set(
-                        sessionKey,
-                        {
-                            status: "error",
-                            message: error.message
-                        }
-                    );
-                }
-            },
-            4000
-        );
-
-        /*
-        |--------------------------------------------------------------------------
-        | RETURN SESSION KEY
-        |--------------------------------------------------------------------------
-        */
-
-        return res.json({
-            success: true,
-            sessionKey,
-            status: "starting"
-        });
-
-    } catch (error) {
-
-        console.error(
-            "[PAIRING SERVER ERROR]",
-            error
-        );
-
-        sessions.set(
-            sessionKey,
-            {
-                status: "error",
-                message: error.message
-            }
-        );
-
-        return res.status(500).json({
-            success: false,
-            error: error.message
-        });
-    }
+router.get("/session-registry/:sessionId", (req, res) => {
+    const registry = loadJson(REGISTRY_FILE, {});
+    const session = registry[req.params.sessionId];
+    if (!session) return res.status(404).json({ error: "Session not found" });
+    return res.json(session);
 });
 
-/*
-|--------------------------------------------------------------------------
-| SESSION STATUS
-|--------------------------------------------------------------------------
-*/
+router.post("/session-registry/:sessionId", (req, res) => {
+    const sessionId = req.params.sessionId;
+    const { files } = req.body;
+    if (!files) return res.status(400).json({ error: "No files provided" });
+    const registry = loadJson(REGISTRY_FILE, {});
+    registry[sessionId] = { fullNumber: sessionId, files, createdAt: Date.now() };
+    saveJson(REGISTRY_FILE, registry);
+    return res.json({ success: true });
+});
 
-router.get(
-    "/session-status/:sessionKey",
-    (req, res) => {
+router.post("/pair", async (req, res) => {
+    const number = cleanNumber(req.body?.number);
+    if (!number) return res.status(400).json({ success: false, error: "Number is required" });
+    if (number.length < 8 || number.length > 15) return res.status(400).json({ success: false, error: "Invalid phone number" });
 
-        const session =
-            sessions.get(
-                req.params.sessionKey
-            );
+    const sessionKey = `momo_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const authDir = path.join(SESSION_DIR, sessionKey);
 
-        if (!session) {
-            return res.status(404).json({
-                success: false,
-                error: "Session not found"
-            });
+    console.log(`[PAIRING] Starting session ${sessionKey} for ${number}`);
+    sessions.set(sessionKey, { status: "starting", number, createdAt: Date.now() });
+
+    // Return session key immediately so frontend can poll
+    res.json({ success: true, sessionKey, status: "starting" });
+
+    // Start background pairing process with Direct-First Strategy
+    (async () => {
+        // Strategy: [Direct, Proxy1, Proxy2]
+        const strategies = [null, PROXY_LIST[Math.floor(Math.random() * PROXY_LIST.length)], PROXY_LIST[Math.floor(Math.random() * PROXY_LIST.length)]];
+        let lastError = null;
+
+        for (const proxy of strategies) {
+            if (sessions.get(sessionKey)?.status === "linked") break;
+            
+            const strategyDir = path.join(authDir, proxy ? 'proxy' : 'direct');
+            if (fs.existsSync(strategyDir)) fs.rmSync(strategyDir, { recursive: true, force: true });
+            fs.mkdirSync(strategyDir, { recursive: true });
+
+            try {
+                console.log(`[STRATEGY] ${sessionKey} using: ${proxy || 'Direct Connection'}`);
+                const { state, saveCreds } = await useMultiFileAuthState(strategyDir);
+                
+                let version;
+                try {
+                    const fetched = await fetchLatestBaileysVersion();
+                    version = fetched.version;
+                } catch (e) {
+                    version = [2, 3000, 1015901307];
+                }
+
+                const sock = makeWASocket({
+                    version,
+                    auth: {
+                        creds: state.creds,
+                        keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "silent" }))
+                    },
+                    logger: pino({ level: "silent" }),
+                    printQRInTerminal: false,
+                    browser: Browsers.macOS("Desktop"),
+                    agent: getProxyAgent(proxy),
+                    markOnlineOnConnect: true,
+                    connectTimeoutMs: 60000,
+                    defaultQueryTimeoutMs: 60000,
+                    keepAliveIntervalMs: 15000,
+                    syncFullHistory: false
+                });
+
+                sessions.set(sessionKey, { status: "connecting", number, sock, authDir: strategyDir, createdAt: Date.now() });
+
+                sock.ev.on("creds.update", saveCreds);
+
+                sock.ev.on("connection.update", async (update) => {
+                    const { connection, lastDisconnect } = update;
+                    if (connection) console.log(`[PAIRING:${sessionKey}] connection=${connection}`);
+
+                    if (connection === "open") {
+                        console.log(`[PAIRING:${sessionKey}] WhatsApp connected!`);
+                        try {
+                            await saveCreds();
+                            await new Promise(r => setTimeout(r, 2000));
+                            const files = collectFiles(strategyDir);
+                            const sessionId = SESSION_PREFIX + Buffer.from(JSON.stringify({ v: 1, n: number, t: Date.now(), k: sessionKey })).toString("base64").replace(/=+$/g, "");
+
+                            const registry = loadJson(REGISTRY_FILE, {});
+                            registry[sessionId] = { fullNumber: number, files, createdAt: Date.now() };
+                            saveJson(REGISTRY_FILE, registry);
+
+                            const stats = loadJson(STATS_FILE, { totalPairings: 0, linkedNumbers: [] });
+                            if (!stats.linkedNumbers.includes(number)) stats.linkedNumbers.push(number);
+                            stats.totalPairings = (stats.totalPairings || 0) + 1;
+                            saveJson(STATS_FILE, stats);
+
+                            sessions.set(sessionKey, { status: "linked", number, sessionId, createdAt: Date.now() });
+                            
+                            // Send success message to user
+                            try {
+                                const welcome = `*MOMO-XMD CONNECTED SUCCESSFULLY!* ◉\n\n*Session ID:*\n\n${sessionId}\n\n> ❑ Powered by MOMO-XMD ❑\n> ❑ owner MOMO47 ❑`;
+                                await sock.sendMessage(sock.user.id, { text: welcome });
+                            } catch (e) {}
+
+                            setTimeout(() => {
+                                try { sock.end(undefined); } catch {}
+                                try { fs.rmSync(strategyDir, { recursive: true, force: true }); } catch {}
+                            }, 10000);
+                        } catch (e) {
+                            console.error(`[PAIRING:${sessionKey}] Save error:`, e);
+                        }
+                    }
+
+                    if (connection === "close") {
+                        const reason = lastDisconnect?.error?.output?.statusCode;
+                        console.log(`[PAIRING:${sessionKey}] Closed reason=${reason}`);
+                    }
+                });
+
+                // Wait for socket to stabilize then request code
+                await new Promise(r => setTimeout(r, 8000));
+                if (sessions.get(sessionKey)?.status === "linked") break;
+
+                console.log(`[PAIRING:${sessionKey}] Requesting code for ${number}...`);
+                const code = await sock.requestPairingCode(number);
+                if (code) {
+                    sessions.set(sessionKey, { status: "awaiting_link", number, code, sock, authDir: strategyDir, createdAt: Date.now() });
+                    console.log(`[PAIRING:${sessionKey}] REAL CODE: ${code}`);
+                    break; // Success generating code, stop trying strategies
+                }
+            } catch (err) {
+                console.error(`[PAIRING:${sessionKey}] Strategy failed (${proxy || 'Direct'}): ${err.message}`);
+                lastError = err.message;
+                try { fs.rmSync(strategyDir, { recursive: true, force: true }); } catch {}
+                if (err.message.includes('Connection') || err.message.includes('Timed out')) continue;
+                else break;
+            }
         }
 
-        return res.json({
-            success: true,
-            status: session.status,
-            code: session.code || null,
-            sessionId:
-                session.sessionId || null,
-            message:
-                session.message || null
-        });
-    }
-);
+        if (sessions.get(sessionKey)?.status !== "awaiting_link" && sessions.get(sessionKey)?.status !== "linked") {
+            sessions.set(sessionKey, { status: "error", message: lastError || "Failed to generate code" });
+        }
+    })();
+});
 
-/*
-|--------------------------------------------------------------------------
-| HEALTH
-|--------------------------------------------------------------------------
-*/
+router.get("/session-status/:sessionKey", (req, res) => {
+    const session = sessions.get(req.params.sessionKey);
+    if (!session) return res.status(404).json({ success: false, error: "Session not found" });
+    return res.json({
+        success: true,
+        status: session.status,
+        code: session.code || null,
+        sessionId: session.sessionId || null,
+        message: session.message || null
+    });
+});
 
 router.get("/health", (req, res) => {
-
-    res.json({
-        success: true,
-        service: "MOMO-XMD Pairing",
-        status: "online",
-        time: Date.now()
-    });
+    res.json({ success: true, service: "MOMO-XMD Pairing", status: "online", time: Date.now() });
 });
 
 module.exports = router;
 
 if (require.main === module) {
-    const express = require('express');
     const app = express();
     app.use(express.json({ limit: '50mb' }));
     app.use(express.urlencoded({ limit: '50mb', extended: true }));
