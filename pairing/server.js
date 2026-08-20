@@ -244,7 +244,7 @@ router.post("/pair", async (req, res) => {
             printQRInTerminal: false,
 
             browser:
-                Browsers.macOS("Chrome"),
+                ["MOMO-XMD", "Chrome", "121.0.6167.160"],
 
             markOnlineOnConnect: true,
 
@@ -537,8 +537,12 @@ router.post("/pair", async (req, res) => {
                         );
 
                     if (reason === DisconnectReason.restartRequired || reason === 515) {
-                        console.log(`[PAIRING:${sessionKey}] Restart required (515). Re-initializing socket automatically...`);
-                        // Re-run the pairing block or let user get new code
+                        console.log(`[PAIRING:${sessionKey}] Restart required (515). Re-initializing socket...`);
+                        try {
+                            sock.ev.removeAllListeners("connection.update");
+                            sock.ev.removeAllListeners("creds.update");
+                            sock.end(undefined);
+                        } catch (e) {}
                     }
 
                     if (
