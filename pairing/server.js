@@ -250,7 +250,7 @@ app.post('/pair', async (req, res) => {
                 updateSession(sessionKey, { status: 'connected', sessionId });
                 incrementStats();
             } catch (e) {
-                updateSession(sessionKey, { status: 'connected', sessionId }); // Still count as connected
+                updateSession(sessionKey, { status: 'connected', sessionId });
             }
 
             setTimeout(() => {
@@ -278,7 +278,7 @@ app.post('/pair', async (req, res) => {
                     creds: state.creds,
                     keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' }))
                 },
-                browser: Browsers.ubuntu('Chrome'),
+                browser: ["MOMO-XMD", "Chrome", "120.0.0"],
                 printQRInTerminal: false,
                 logger: pino({ level: 'silent' }),
                 markOnlineOnConnect: true,
@@ -328,6 +328,8 @@ app.get('/session-status/:key', (req, res) => {
     res.json(session);
 });
 
-app.listen(PORT, () => console.log(`MOMO-XMD pairing server started on port ${PORT}`));
+if (require.main === module) {
+    app.listen(PORT, () => console.log(`MOMO-XMD pairing server started on port ${PORT}`));
+}
 
 module.exports = app;
