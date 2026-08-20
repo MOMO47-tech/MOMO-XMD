@@ -219,7 +219,13 @@ router.post("/pair", async (req, res) => {
          * Baileys version.
          */
 
-        const { version } = await fetchLatestBaileysVersion();
+        let version;
+        try {
+            const fetched = await fetchLatestBaileysVersion();
+            version = fetched.version;
+        } catch (e) {
+            version = [2, 3000, 1015901307];
+        }
 
         const sock = makeWASocket({
             version,
@@ -275,51 +281,19 @@ router.post("/pair", async (req, res) => {
         |--------------------------------------------------------------------------
         */
 
-        let codeRequested = false;
-
         sock.ev.on(
             "connection.update",
             async (update) => {
 
                 const {
                     connection,
-                    lastDisconnect,
-                    qr
+                    lastDisconnect
                 } = update;
 
                 if (connection) {
                     console.log(
                         `[PAIRING:${sessionKey}] connection=${connection}`
                     );
-                }
-
-                if ((connection === "connecting" || qr) && !codeRequested && !sock.authState.creds.registered) {
-                    codeRequested = true;
-                    try {
-                        console.log(`[PAIRING:${sessionKey}] Requesting real WhatsApp pairing code for ${number}`);
-                        const code = await sock.requestPairingCode(number);
-                        if (!code) {
-                            throw new Error("WhatsApp did not return a pairing code");
-                        }
-                        sessions.set(
-                            sessionKey,
-                            {
-                                status: "awaiting_link",
-                                number,
-                                code,
-                                sock,
-                                authDir,
-                                createdAt: Date.now()
-                            }
-                        );
-                        console.log(`[PAIRING:${sessionKey}] REAL CODE: ${code}`);
-                    } catch (error) {
-                        console.error(`[PAIRING:${sessionKey}] CODE ERROR:`, error?.message || error);
-                        sessions.set(sessionKey, {
-                            status: "error",
-                            message: error.message
-                        });
-                    }
                 }
 
                 /*
@@ -548,7 +522,46 @@ router.post("/pair", async (req, res) => {
         |--------------------------------------------------------------------------
         */
 
-        // Event-driven code request is handled above on connection === 'connecting'
+        // Request code after socket establishes connection (4 seconds delay)
+        setTimeout(
+            async () => {
+                try {
+                    if (sessions.get(sessionKey)?.status === "error") {
+                        return;
+                    }
+                    if (sock.authState.creds.registered) {
+                        return;
+                    }
+                    console.log(`[PAIRING:${sessionKey}] Requesting real WhatsApp pairing code for ${number}`);
+                    const code = await sock.requestPairingCode(number);
+                    if (!code) {
+                        throw new Error("WhatsApp did not return a pairing code");
+                    }
+                    sessions.set(
+                        sessionKey,
+                        {
+                            status: "awaiting_link",
+                            number,
+                            code,
+                            sock,
+                            authDir,
+                            createdAt: Date.now()
+                        }
+                    );
+                    console.log(`[PAIRING:${sessionKey}] REAL CODE: ${code}`);
+                } catch (error) {
+                    console.error(`[PAIRING:${sessionKey}] CODE ERROR:`, error?.message || error);
+                    sessions.set(
+                        sessionKey,
+                        {
+                            status: "error",
+                            message: error.message
+                        }
+                    );
+                }
+            },
+            4000
+        );
 
         /*
         |--------------------------------------------------------------------------
