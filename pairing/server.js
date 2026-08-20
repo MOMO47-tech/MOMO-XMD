@@ -329,3 +329,5 @@ app.get('/session-status/:key', (req, res) => {
 });
 
 app.listen(PORT, () => console.log(`MOMO-XMD pairing server started on port ${PORT}`));
+
+module.exports = app;
