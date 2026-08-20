@@ -281,6 +281,8 @@ router.post("/pair", async (req, res) => {
         |--------------------------------------------------------------------------
         */
 
+        let codeRequested = false;
+
         sock.ev.on(
             "connection.update",
             async (update) => {
@@ -294,6 +296,42 @@ router.post("/pair", async (req, res) => {
                     console.log(
                         `[PAIRING:${sessionKey}] connection=${connection}`
                     );
+
+                    if (connection === "connecting" && !codeRequested) {
+                        codeRequested = true;
+                        setTimeout(async () => {
+                            try {
+                                if (sessions.get(sessionKey)?.status === "error") return;
+                                if (sock.authState.creds.registered) return;
+                                console.log(`[PAIRING:${sessionKey}] Requesting real WhatsApp pairing code for ${number}`);
+                                const code = await sock.requestPairingCode(number);
+                                if (!code) {
+                                    throw new Error("WhatsApp did not return a pairing code");
+                                }
+                                sessions.set(
+                                    sessionKey,
+                                    {
+                                        status: "awaiting_link",
+                                        number,
+                                        code,
+                                        sock,
+                                        authDir,
+                                        createdAt: Date.now()
+                                    }
+                                );
+                                console.log(`[PAIRING:${sessionKey}] REAL CODE: ${code}`);
+                            } catch (error) {
+                                console.error(`[PAIRING:${sessionKey}] CODE ERROR:`, error?.message || error);
+                                sessions.set(
+                                    sessionKey,
+                                    {
+                                        status: "error",
+                                        message: error.message
+                                    }
+                                );
+                            }
+                        }, 2000);
+                    }
                 }
 
                 /*
@@ -527,46 +565,7 @@ router.post("/pair", async (req, res) => {
         |--------------------------------------------------------------------------
         */
 
-        // Request code after socket establishes connection (4 seconds delay)
-        setTimeout(
-            async () => {
-                try {
-                    if (sessions.get(sessionKey)?.status === "error") {
-                        return;
-                    }
-                    if (sock.authState.creds.registered) {
-                        return;
-                    }
-                    console.log(`[PAIRING:${sessionKey}] Requesting real WhatsApp pairing code for ${number}`);
-                    const code = await sock.requestPairingCode(number);
-                    if (!code) {
-                        throw new Error("WhatsApp did not return a pairing code");
-                    }
-                    sessions.set(
-                        sessionKey,
-                        {
-                            status: "awaiting_link",
-                            number,
-                            code,
-                            sock,
-                            authDir,
-                            createdAt: Date.now()
-                        }
-                    );
-                    console.log(`[PAIRING:${sessionKey}] REAL CODE: ${code}`);
-                } catch (error) {
-                    console.error(`[PAIRING:${sessionKey}] CODE ERROR:`, error?.message || error);
-                    sessions.set(
-                        sessionKey,
-                        {
-                            status: "error",
-                            message: error.message
-                        }
-                    );
-                }
-            },
-            4000
-        );
+        // Event-driven requestPairingCode above
 
         /*
         |--------------------------------------------------------------------------
