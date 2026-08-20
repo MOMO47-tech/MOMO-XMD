@@ -12,23 +12,23 @@
             margin: 0;
             padding: 0;
             background: #050505;
-            color: #ff0000;
+            color: #00ffff;
             font-family: 'Special Elite', cursive;
             overflow-x: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background-image: radial-gradient(circle at center, #1a0000 0%, #050505 100%);
+            background-image: radial-gradient(circle at center, #00001a 0%, #050505 100%);
         }
 
         .container {
             width: 90%;
             max-width: 500px;
-            background: rgba(10, 0, 0, 0.95);
-            border: 1px solid #ff0000;
+            background: rgba(0, 5, 10, 0.95);
+            border: 1px solid #00ffff;
             padding: 40px;
-            box-shadow: 0 0 50px rgba(255, 0, 0, 0.3), inset 0 0 20px rgba(255, 0, 0, 0.2);
+            box-shadow: 0 0 50px rgba(0, 255, 255, 0.3), inset 0 0 20px rgba(0, 255, 255, 0.2);
             text-align: center;
             position: relative;
             z-index: 10;
@@ -39,30 +39,29 @@
             width: 180px;
             height: 180px;
             border-radius: 50%;
-            border: 2px solid #ff0000;
-            box-shadow: 0 0 30px #ff0000;
+            border: 2px solid #00ffff;
+            box-shadow: 0 0 30px #00ffff;
             margin-bottom: 25px;
-            filter: grayscale(100%) contrast(150%);
             animation: flicker 3s infinite;
         }
 
         @keyframes flicker {
             0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; }
-            20%, 24%, 55% { opacity: 0.4; }
+            20%, 24%, 55% { opacity: 0.8; }
         }
 
         h1 {
             font-family: 'Nosifer', cursive;
             font-size: 2.5em;
             margin: 0;
-            color: #ff0000;
-            text-shadow: 0 0 20px #ff0000;
+            color: #00ffff;
+            text-shadow: 0 0 20px #00ffff;
             letter-spacing: 3px;
         }
 
         .sub-title {
             font-size: 0.9em;
-            color: #880000;
+            color: #008888;
             margin-bottom: 30px;
             text-transform: uppercase;
             letter-spacing: 5px;
@@ -76,7 +75,7 @@
         label {
             display: block;
             margin-bottom: 10px;
-            color: #ff0000;
+            color: #00ffff;
             font-size: 0.8em;
             letter-spacing: 2px;
         }
@@ -85,8 +84,8 @@
             width: 100%;
             padding: 15px;
             background: #000;
-            border: 1px solid #440000;
-            color: #ff0000;
+            border: 1px solid #004444;
+            color: #00ffff;
             font-family: 'Special Elite', cursive;
             box-sizing: border-box;
             outline: none;
@@ -96,15 +95,15 @@
         }
 
         input:focus {
-            border-color: #ff0000;
-            box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
+            border-color: #00ffff;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
         }
 
         button {
             width: 100%;
             padding: 18px;
-            background: #880000;
-            border: 1px solid #ff0000;
+            background: #008888;
+            border: 1px solid #00ffff;
             color: #fff;
             font-family: 'Special Elite', cursive;
             font-size: 1.1em;
@@ -116,16 +115,16 @@
         }
 
         button:hover {
-            background: #ff0000;
+            background: #00ffff;
             color: #000;
-            box-shadow: 0 0 30px #ff0000;
+            box-shadow: 0 0 30px #00ffff;
         }
 
         #result {
             margin-top: 30px;
             padding: 20px;
             background: #000;
-            border: 1px solid #ff0000;
+            border: 1px solid #00ffff;
             display: none;
         }
 
@@ -135,14 +134,14 @@
             letter-spacing: 8px;
             margin: 20px 0;
             font-weight: bold;
-            text-shadow: 0 0 20px #ff0000;
+            text-shadow: 0 0 20px #00ffff;
             cursor: pointer;
         }
 
         .copy-btn {
             background: transparent;
-            border: 1px solid #ff0000;
-            color: #ff0000;
+            border: 1px solid #00ffff;
+            color: #00ffff;
             padding: 10px 20px;
             font-size: 0.8em;
             width: auto;
@@ -153,20 +152,20 @@
             margin-top: 30px;
             text-align: left;
             font-size: 0.8em;
-            color: #880000;
+            color: #008888;
             line-height: 1.6;
-            border-top: 1px solid #440000;
+            border-top: 1px solid #004444;
             padding-top: 20px;
         }
 
         .owner {
             margin-top: 40px;
             font-size: 0.7em;
-            color: #440000;
+            color: #004444;
             letter-spacing: 2px;
         }
 
-        .owner span { color: #ff0000; }
+        .owner span { color: #00ffff; }
 
         .audio-control {
             position: absolute;
@@ -174,11 +173,11 @@
             right: 20px;
             cursor: pointer;
             font-size: 1.5em;
-            color: #ff0000;
-            background: rgba(255, 0, 0, 0.1);
+            color: #00ffff;
+            background: rgba(0, 255, 255, 0.1);
             padding: 10px;
             border-radius: 50%;
-            border: 1px solid #ff0000;
+            border: 1px solid #00ffff;
             width: 40px;
             height: 40px;
             display: flex;
@@ -190,8 +189,8 @@
             display: none;
             width: 40px;
             height: 40px;
-            border: 3px solid #440000;
-            border-top: 3px solid #ff0000;
+            border: 3px solid #004444;
+            border-top: 3px solid #00ffff;
             border-radius: 50%;
             animation: spin 1s linear infinite;
             margin: 20px auto;
@@ -204,13 +203,13 @@
             top: 20px;
             left: 50%;
             transform: translateX(-50%);
-            background: #ff0000;
+            background: #00ffff;
             color: #000;
             padding: 10px 30px;
             font-weight: bold;
             display: none;
             z-index: 1000;
-            box-shadow: 0 0 20px #ff0000;
+            box-shadow: 0 0 20px #00ffff;
         }
     </style>
 </head>
@@ -239,7 +238,7 @@
         <div id="result">
             <div class="code-box" id="code-display" onclick="copyCode()">--------</div>
             <button class="copy-btn" onclick="copyCode()">COPY CODE</button>
-            <div id="status-text" style="margin-top: 20px; font-size: 0.7em; color: #ff0000;">AWAITING WHATSAPP...</div>
+            <div id="status-text" style="margin-top: 20px; font-size: 0.7em; color: #00ffff;">AWAITING WHATSAPP...</div>
         </div>
 
         <div class="instructions">
