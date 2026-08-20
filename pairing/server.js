@@ -244,7 +244,7 @@ router.post("/pair", async (req, res) => {
             printQRInTerminal: false,
 
             browser:
-                Browsers.ubuntu("Chrome"),
+                ["Ubuntu", "Chrome", "20.0.04"],
 
             markOnlineOnConnect: true,
 
