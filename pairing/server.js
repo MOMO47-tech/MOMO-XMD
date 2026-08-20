@@ -1,4 +1,5 @@
 const express = require("express");
+const express = require("express");
 const {
     default: makeWASocket,
     useMultiFileAuthState,
@@ -655,7 +656,6 @@ router.get("/health", (req, res) => {
 module.exports = router;
 
 if (require.main === module) {
-    const express = require('express');
     const app = express();
     app.use(express.json({ limit: '50mb' }));
     app.use(express.urlencoded({ limit: '50mb', extended: true }));
