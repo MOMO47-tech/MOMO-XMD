@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <img src="https://readme-typing-svg.herokuapp.com?font=Creepster&size=35&duration=3000&pause=1000&color=00D4FF&center=true&vCenter=true&width=650&lines=WELCOME+FOR+MOMO-XMD;BLUE+SCARY+HACKER+EDITION;STAY+ANONYMOUS;OWNER+MOMO47" alt="MOMO-XMD animated banner" />
+  <img src="https://readme-typing-svg.herokuapp.com/?font=Creepster&size=35&duration=3000&pause=1000&color=00D4FF&center=true&vCenter=true&width=650&lines=WELCOME+FOR+MOMO-XMD;BLUE+SCARY+HACKER+EDITION;STAY+ANONYMOUS;OWNER+MOMO47" alt="MOMO-XMD animated banner" />
 </p>
 
 ---
@@ -43,7 +43,7 @@
 ## 🚀 DEPLOYMENT
 
 <p align="center">
-  <a href="https://heroku.com/deploy?template=https://github.com/MOMO47-tech/MOMO-XMD"><img src="https://img.shields.io/badge/DEPLOY%20TO-HEROKU-7952B3?style=for-the-badge&logo=heroku" alt="Deploy to Heroku"></a>
+  <a href="https://heroku.com/deploy?template=https://github.com/MOMO47-tech/MOMO-XMD/tree/heroku-bot-deploy"><img src="https://img.shields.io/badge/DEPLOY%20TO-HEROKU-7952B3?style=for-the-badge&logo=heroku" alt="Deploy to Heroku"></a>
   <a href="https://render.com/deploy?repo=https://github.com/MOMO47-tech/MOMO-XMD"><img src="https://img.shields.io/badge/DEPLOY%20TO-RENDER-46E3B7?style=for-the-badge&logo=render" alt="Deploy to Render"></a>
 </p>
 
@@ -95,3 +95,11 @@
 <p align="center">
   <strong>DESIGNED BY MOMO47 • MOMO-XMD • 2026</strong>
 </p>
+
+> The Heroku button targets the `heroku-bot-deploy` branch so it deploys the bot process rather than the pairing server.
+> Pairing files and command files were not modified in this README update.
+
+References:
+- [MOMO-XMD repository](https://github.com/MOMO47-tech/MOMO-XMD)
+- [Heroku Button documentation](https://devcenter.heroku.com/articles/heroku-button)
+- [Render Blueprint documentation](https://render.com/docs/blueprint-spec)

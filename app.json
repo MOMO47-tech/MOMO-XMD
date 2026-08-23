@@ -1,13 +1,13 @@
 {
-  "name": "MOMO-XMD Bot",
-  "description": "Deploy the MOMO-XMD WhatsApp bot with a 32-character Session ID.",
+  "name": "MOMO-XMD WhatsApp Bot",
+  "description": "Deploy the MOMO-XMD WhatsApp bot with a MOMO-XMD Session ID.",
   "repository": "https://github.com/MOMO47-tech/MOMO-XMD",
   "logo": "https://raw.githubusercontent.com/MOMO47-tech/MOMO-XMD/main/media/momo.jpg",
   "keywords": ["whatsapp", "bot", "momo-xmd", "baileys"],
   "success_url": "/",
   "env": {
     "SESSION_ID": {
-      "description": "Your 32-character MOMO-XMD Session ID, for example MOMO-XMD~H... or MOMO-XMD~V...",
+      "description": "Your MOMO-XMD Session ID beginning with MOMO-XMD~",
       "required": true
     }
   },
