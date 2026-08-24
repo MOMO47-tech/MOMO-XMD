@@ -156,11 +156,8 @@ app.post('/pair', async (req, res) => {
                 };
 
                 sock = createSocket();
-                let wait = 0;
-                while (!pairingSuccess && !finished && wait < 45) { await delay(1000); wait++; }
-                if (pairingSuccess) return res.json({ success: true, sessionKey });
-                
-                try { sock?.end(); } catch {}; fs.rmSync(authDir, { recursive: true, force: true });
+                // Return immediately so the browser can poll while WhatsApp obtains the code.
+                return res.json({ success: true, sessionKey });
             } catch (error) {
                 lastStrategyError = error;
                 try { sock?.end(); } catch {}; fs.rmSync(authDir, { recursive: true, force: true });
