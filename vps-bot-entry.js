@@ -29,7 +29,7 @@ server.listen(port, "0.0.0.0", () => {
   startBot()
     .then(() => {
       botStatus = "connected";
-      console.log("[MOMO-XMD] Bot startup completed");
+      console.log("[MOMO-XMD] WhatsApp connection is open");
     })
     .catch((error) => {
       botStatus = "error";
