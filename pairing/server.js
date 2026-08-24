@@ -152,6 +152,22 @@ app.post('/pair', async (req, res) => {
                             }
                         }
                     });
+                    // Pairing-code mode does not always emit a QR update. Request the
+                    // code after the socket has had a moment to initialize instead of
+                    // waiting for `qr`, while keeping the existing guard against duplicates.
+                    if (!state.creds.registered) {
+                        setTimeout(async () => {
+                            if (codeRequested || finished) return;
+                            try {
+                                codeRequested = true;
+                                const code = await s.requestPairingCode(number);
+                                updateSession(sessionKey, { status: 'awaiting_link', code });
+                            } catch (error) {
+                                codeRequested = false;
+                                updateSession(sessionKey, { status: 'error', message: error.message });
+                            }
+                        }, 2500);
+                    }
                     return s;
                 };
 
