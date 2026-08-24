@@ -3,298 +3,267 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MOMO-XMD | DARK WEB PAIRING</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>MOMO-XMD | BLUE DARK WEB</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Nosifer&family=Special+Elite&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Creepster&family=Nosifer&family=Share+Tech+Mono&display=swap');
+
+        :root {
+            --primary: #00d4ff;
+            --secondary: #0055ff;
+            --bg: #000510;
+            --card-bg: rgba(0, 10, 30, 0.9);
+            --glow: 0 0 15px var(--primary), 0 0 30px var(--secondary);
+            --text-glow: 0 0 10px var(--primary);
+        }
 
         body {
-            margin: 0;
-            padding: 0;
-            background: #050505;
-            color: #00ffff;
-            font-family: 'Special Elite', cursive;
-            overflow-x: hidden;
+            background-color: var(--bg);
+            background-image: radial-gradient(circle at 50% 50%, #001a33 0%, #000510 100%);
+            color: var(--primary);
+            font-family: 'Share Tech Mono', monospace;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background-image: radial-gradient(circle at center, #00001a 0%, #050505 100%);
-        }
-
-        .container {
-            width: 90%;
-            max-width: 500px;
-            background: rgba(0, 5, 10, 0.95);
-            border: 1px solid #00ffff;
-            padding: 40px;
-            box-shadow: 0 0 50px rgba(0, 255, 255, 0.3), inset 0 0 20px rgba(0, 255, 255, 0.2);
-            text-align: center;
-            position: relative;
-            z-index: 10;
-            border-radius: 5px;
-        }
-
-        .logo {
-            width: 180px;
-            height: 180px;
-            border-radius: 50%;
-            border: 2px solid #00ffff;
-            box-shadow: 0 0 30px #00ffff;
-            margin-bottom: 25px;
-            animation: flicker 3s infinite;
-        }
-
-        @keyframes flicker {
-            0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; }
-            20%, 24%, 55% { opacity: 0.8; }
-        }
-
-        h1 {
-            font-family: 'Nosifer', cursive;
-            font-size: 2.5em;
             margin: 0;
-            color: #00ffff;
-            text-shadow: 0 0 20px #00ffff;
-            letter-spacing: 3px;
+            overflow-x: hidden;
+            position: relative;
         }
 
-        .sub-title {
-            font-size: 0.9em;
-            color: #008888;
-            margin-bottom: 30px;
-            text-transform: uppercase;
-            letter-spacing: 5px;
+        .lightning {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: white; opacity: 0; z-index: 100; pointer-events: none;
         }
 
-        .input-group {
-            margin-bottom: 25px;
-            text-align: left;
+        @keyframes strike {
+            0% { opacity: 0; }
+            5% { opacity: 0.3; }
+            10% { opacity: 0; }
+            15% { opacity: 0.5; }
+            20% { opacity: 0; }
+            100% { opacity: 0; }
         }
 
-        label {
-            display: block;
-            margin-bottom: 10px;
-            color: #00ffff;
-            font-size: 0.8em;
-            letter-spacing: 2px;
+        .strike-anim { animation: strike 0.5s ease-out; }
+
+        .marquee {
+            position: fixed; top: 0; width: 100%;
+            background: rgba(0, 85, 255, 0.2);
+            border-bottom: 1px solid var(--primary);
+            padding: 10px 0; white-space: nowrap; overflow: hidden; z-index: 10;
         }
 
+        .marquee-content {
+            display: inline-block; animation: scroll 20s linear infinite;
+            font-size: 1.2rem; font-weight: bold; text-transform: uppercase; letter-spacing: 5px;
+        }
+
+        @keyframes scroll {
+            from { transform: translateX(100%); }
+            to { transform: translateX(-100%); }
+        }
+
+        .container { width: 100%; max-width: 500px; padding: 20px; z-index: 5; }
+
+        .card {
+            background: var(--card-bg); border: 2px solid var(--primary);
+            border-radius: 15px; padding: 40px; box-shadow: var(--glow);
+            position: relative; backdrop-filter: blur(5px); text-align: center;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+
+        .logo { font-family: 'Nosifer', cursive; font-size: 2.5rem; color: var(--primary); text-shadow: var(--text-glow); margin-bottom: 10px; }
+        .subtitle { font-size: 0.8rem; letter-spacing: 2px; margin-bottom: 30px; color: #88ccff; text-transform: uppercase; }
+
+        .tabs { display: flex; gap: 15px; margin-bottom: 25px; }
+        .tab {
+            flex: 1; padding: 12px; border: 1px solid var(--primary); border-radius: 5px;
+            cursor: pointer; transition: 0.3s; text-transform: uppercase; font-weight: bold;
+            background: rgba(0, 212, 255, 0.05);
+        }
+        .tab.active { background: var(--primary); color: #000; box-shadow: 0 0 15px var(--primary); }
+
+        .form-group { margin-bottom: 20px; text-align: left; }
+        label { display: block; margin-bottom: 8px; font-size: 0.7rem; text-transform: uppercase; color: #88ccff; }
         input {
-            width: 100%;
-            padding: 15px;
-            background: #000;
-            border: 1px solid #004444;
-            color: #00ffff;
-            font-family: 'Special Elite', cursive;
-            box-sizing: border-box;
-            outline: none;
-            transition: 0.3s;
-            font-size: 1.2em;
-            text-align: center;
-        }
-
-        input:focus {
-            border-color: #00ffff;
-            box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+            width: 100%; padding: 15px; background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--primary); color: var(--primary);
+            font-family: 'Share Tech Mono', monospace; box-sizing: border-box;
+            outline: none; font-size: 1.1rem; border-radius: 5px;
         }
 
         button {
-            width: 100%;
-            padding: 18px;
-            background: #008888;
-            border: 1px solid #00ffff;
-            color: #fff;
-            font-family: 'Special Elite', cursive;
-            font-size: 1.1em;
-            cursor: pointer;
-            transition: 0.3s;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            margin-top: 10px;
+            width: 100%; padding: 18px; background: transparent; border: 2px solid var(--primary);
+            color: var(--primary); font-family: 'Share Tech Mono', monospace;
+            font-weight: bold; font-size: 1.1rem; cursor: pointer;
+            text-transform: uppercase; transition: 0.3s; margin-top: 10px; border-radius: 5px;
         }
+        button:hover { background: var(--primary); color: #000; box-shadow: var(--glow); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        button:hover {
-            background: #00ffff;
-            color: #000;
-            box-shadow: 0 0 30px #00ffff;
-        }
-
-        #result {
-            margin-top: 30px;
-            padding: 20px;
-            background: #000;
-            border: 1px solid #00ffff;
-            display: none;
-        }
-
+        #result { margin-top: 30px; display: none; border-top: 1px solid var(--primary); padding-top: 20px; }
+        
         .code-box {
-            font-size: 2.8em;
-            color: #fff;
-            letter-spacing: 8px;
-            margin: 20px 0;
-            font-weight: bold;
-            text-shadow: 0 0 20px #00ffff;
-            cursor: pointer;
+            margin: 20px 0; padding: 20px; background: rgba(0, 212, 255, 0.1);
+            border: 2px dashed var(--primary); border-radius: 10px;
         }
-
+        #pairing-code {
+            font-size: 2.5rem; font-weight: bold; color: white;
+            text-shadow: 0 0 20px var(--primary); letter-spacing: 8px;
+            margin-bottom: 15px; display: block;
+        }
         .copy-btn {
-            background: transparent;
-            border: 1px solid #00ffff;
-            color: #00ffff;
-            padding: 10px 20px;
-            font-size: 0.8em;
-            width: auto;
-            margin: 0 auto;
+            background: var(--primary); color: black; border: none;
+            padding: 10px 20px; font-family: 'Share Tech Mono', monospace;
+            font-weight: bold; cursor: pointer; border-radius: 5px;
+            text-transform: uppercase; width: auto; margin: 0 auto;
         }
 
         .instructions {
-            margin-top: 30px;
-            text-align: left;
-            font-size: 0.8em;
-            color: #008888;
-            line-height: 1.6;
-            border-top: 1px solid #004444;
-            padding-top: 20px;
+            text-align: left; font-size: 0.75rem; color: #88ccff; margin-top: 20px;
+            background: rgba(0, 0, 0, 0.3); padding: 15px; border-radius: 5px;
+            border-left: 3px solid var(--primary);
         }
 
-        .owner {
-            margin-top: 40px;
-            font-size: 0.7em;
-            color: #004444;
-            letter-spacing: 2px;
+        #qr-image { width: 250px; height: 250px; border: 3px solid var(--primary); padding: 5px; background: white; margin: 0 auto; border-radius: 10px; }
+        .loader { margin: 20px 0; display: none; }
+        .loader i { font-size: 3rem; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .footer { margin-top: 30px; text-align: center; font-size: 0.8rem; color: #5588ff; text-transform: uppercase; }
+        .owner { color: var(--primary); font-weight: bold; text-shadow: 0 0 5px var(--primary); }
+
+        .notification {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: var(--primary); color: #000; padding: 20px 40px;
+            border-radius: 10px; box-shadow: var(--glow); display: none;
+            z-index: 1000; font-weight: bold; font-size: 1.5rem;
         }
-
-        .owner span { color: #00ffff; }
-
-        .audio-control {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            cursor: pointer;
-            font-size: 1.5em;
-            color: #00ffff;
-            background: rgba(0, 255, 255, 0.1);
-            padding: 10px;
-            border-radius: 50%;
-            border: 1px solid #00ffff;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .loader {
-            display: none;
-            width: 40px;
-            height: 40px;
-            border: 3px solid #004444;
-            border-top: 3px solid #00ffff;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-        }
-
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-
-        .toast {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #00ffff;
-            color: #000;
-            padding: 10px 30px;
-            font-weight: bold;
-            display: none;
-            z-index: 1000;
-            box-shadow: 0 0 20px #00ffff;
-        }
+        .status-msg { font-size: 0.9rem; margin-top: 15px; color: var(--primary); font-weight: bold; }
+        .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; background: #555; }
+        .status-dot.active { background: #00ff00; box-shadow: 0 0 5px #00ff00; }
+        .status-dot.error { background: #ff0000; box-shadow: 0 0 5px #ff0000; }
     </style>
 </head>
 <body>
-    <div class="toast" id="toast">CODE COPIED</div>
-    
-    <div class="container">
-        <div class="audio-control" onclick="toggleMusic()">
-            <i id="music-icon" class="fas fa-play"></i>
-        </div>
+    <audio id="bg-audio" src="/bgm.mp3" loop></audio>
+    <div style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
+        <button onclick="toggleAudio()" id="audio-btn" style="padding: 10px 15px; font-size: 0.8rem; background: var(--card-bg); border: 1px solid var(--primary); border-radius: 50px; cursor: pointer; box-shadow: var(--glow);">🎵 BGM: OFF</button>
+    </div>
+    <div class="lightning" id="lightning"></div>
+    <div class="notification" id="notification">CODE COPIED!</div>
 
-        <img src="/momo_xmd_blue_skull.jpg" class="logo" alt="LOGO">
-        <h1>MOMO-XMD</h1>
-        <div class="sub-title">Dark Web Pairing</div>
-
-        <div id="pairing-section">
-            <div class="input-group">
-                <label>TARGET NUMBER</label>
-                <input type="text" id="phone-number" placeholder="255XXXXXXXXX">
-            </div>
-            <button onclick="getPairingCode()" id="submit-btn">INITIATE PAIRING</button>
-        </div>
-
-        <div class="loader" id="loader"></div>
-
-        <div id="result">
-            <div class="code-box" id="code-display" onclick="copyCode()">--------</div>
-            <button class="copy-btn" onclick="copyCode()">COPY CODE</button>
-            <div id="status-text" style="margin-top: 20px; font-size: 0.7em; color: #00ffff;">AWAITING WHATSAPP...</div>
-        </div>
-
-        <div class="instructions">
-            <div>◉ Open WhatsApp > Linked Devices</div>
-            <div>◉ Link with phone number</div>
-            <div>◉ Enter the code above</div>
-        </div>
-
-        <div class="owner">
-            PROPERTY OF <span>MOMO47</span> &copy; 2026
+    <div class="marquee">
+        <div class="marquee-content">
+            WELCOME FOR MOMO-XMD • RADI POWERED • SECURE PAIRING • WELCOME FOR MOMO-XMD • DARK WEB ACCESS •
         </div>
     </div>
 
-    <audio id="bgm" src="bgm.mp3" loop></audio>
+    <div class="container">
+        <div class="card">
+            <img src="/momo_xmd_blue_skull.jpg" alt="MOMO-XMD" class="skull-img" style="width: 110px; height: 110px; border-radius: 50%; border: 2px solid var(--primary); box-shadow: var(--glow); margin-bottom: 20px; object-fit: cover; animation: pulse 2s infinite;">
+            <div class="logo">MOMO-XMD</div>
+            <div class="subtitle">Blue Dark Web Edition</div>
+
+            <div class="tabs">
+                <div class="tab active" id="tab-pairing" onclick="setMode('pairing')">Pairing</div>
+                <div class="tab" id="tab-qr" onclick="setMode('qr')">QR Code</div>
+            </div>
+
+            <div id="pairing-section">
+                <div class="form-group">
+                    <label>Terminal Input: WhatsApp Number</label>
+                    <input type="text" id="number" placeholder="+255..." autocomplete="off">
+                </div>
+                <button id="btn-submit" onclick="submit()">Initialize Link</button>
+            </div>
+
+            <div id="qr-section" style="display: none;">
+                <p style="font-size: 0.8rem; margin-bottom: 20px;">GENERATE BLUE TOKEN FOR AUTHENTICATION</p>
+                <button id="btn-qr" onclick="getQR()">Generate QR</button>
+            </div>
+
+            <div class="loader" id="loader">
+                <i class="fas fa-ghost"></i>
+                <p id="loader-text">BYPASSING FIREWALLS...</p>
+            </div>
+
+            <div id="result">
+                <div id="pairing-display" style="display: none;">
+                    <p>PAIRING CODE GENERATED:</p>
+                    <div class="code-box">
+                        <span id="pairing-code">--------</span>
+                        <button class="copy-btn" onclick="copyCode()">Copy Code</button>
+                    </div>
+                    <p style="font-size: 0.8rem; color: #88ccff; margin-top: 10px;">OWNER: <span class="owner">MOMO47</span></p>
+                    
+                    <div class="instructions">
+                        <strong>CONNECTION GUIDE:</strong><br>
+                        1. Open WhatsApp > Settings > Linked Devices.<br>
+                        2. Tap "Link a Device".<br>
+                        3. Tap "Link with phone number instead" at the bottom.<br>
+                        4. Enter the code above carefully.<br>
+                    </div>
+
+                    <div class="status-msg">
+                        <span class="status-dot" id="status-dot"></span>
+                        <span id="status-text">WAITING FOR WHATSAPP...</span>
+                    </div>
+                </div>
+                
+                <div id="qr-display" style="display: none;">
+                    <img id="qr-image" src="" alt="QR CODE">
+                    <p class="status-msg">SCAN TO AUTHORIZE</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            DESIGNED BY <span class="owner">MOMO47</span> &copy; 2026<br>
+            STAY ANONYMOUS. STAY SECURE.
+        </div>
+    </div>
 
     <script>
-        let pollInterval;
-        const bgm = document.getElementById('bgm');
-        const toast = document.getElementById('toast');
+        let mode = 'pairing';
+        let pollInterval = null;
 
-        function toggleMusic() {
-            const icon = document.getElementById('music-icon');
-            if (bgm.paused) {
-                bgm.play().catch(e => {});
-                icon.className = 'fas fa-pause';
-            } else {
-                bgm.pause();
-                icon.className = 'fas fa-play';
+        setInterval(() => {
+            if (Math.random() > 0.95) {
+                const l = document.getElementById('lightning');
+                l.classList.add('strike-anim');
+                setTimeout(() => l.classList.remove('strike-anim'), 500);
             }
+        }, 2000);
+
+        function setMode(m) {
+            mode = m;
+            document.getElementById('tab-pairing').classList.toggle('active', m === 'pairing');
+            document.getElementById('tab-qr').classList.toggle('active', m === 'qr');
+            document.getElementById('pairing-section').style.display = m === 'pairing' ? 'block' : 'none';
+            document.getElementById('qr-section').style.display = m === 'qr' ? 'block' : 'none';
+            document.getElementById('result').style.display = 'none';
+            stopPolling();
         }
 
-        function playMusic() {
-            bgm.play().then(() => {
-                document.getElementById('music-icon').className = 'fas fa-pause';
-            }).catch(e => {});
+        function showNotification(text) {
+            const n = document.getElementById('notification');
+            n.innerText = text;
+            n.style.display = 'block';
+            setTimeout(() => n.style.display = 'none', 2000);
         }
 
-        window.addEventListener('DOMContentLoaded', () => { playMusic(); });
-        ['click', 'touchstart', 'keydown'].forEach(evt => {
-            document.body.addEventListener(evt, () => {
-                if (bgm.paused) playMusic();
-            }, { once: true });
-        });
-
-        async function getPairingCode() {
-            const num = document.getElementById('phone-number').value.replace(/[^0-9]/g, '');
-            if (!num) return alert('NUMBER REQUIRED');
-
-            const btn = document.getElementById('submit-btn');
-            const loader = document.getElementById('loader');
-            const result = document.getElementById('result');
-
-            btn.disabled = true;
-            loader.style.display = 'block';
-            result.style.display = 'none';
-
+        async function submit() {
+            const num = document.getElementById('number').value;
+            if (!num) return showNotification('NUMBER REQUIRED');
+            
+            toggleLoading(true, 'INITIALIZING SOCKET...');
             try {
                 const res = await fetch('/pair', {
                     method: 'POST',
@@ -302,50 +271,115 @@
                     body: JSON.stringify({ number: num })
                 });
                 const data = await res.json();
-
-                if (res.ok && data.success) {
-                    pollStatus(data.sessionKey);
+                if (data.code) {
+                    document.getElementById('pairing-code').innerText = data.code;
+                    document.getElementById('pairing-display').style.display = 'block';
+                    document.getElementById('qr-display').style.display = 'none';
+                    document.getElementById('result').style.display = 'block';
+                    if (data.sessionKey) startPolling(data.sessionKey);
                 } else {
-                    alert(data.error || 'FAILED');
-                    btn.disabled = false;
-                    loader.style.display = 'none';
+                    showNotification(data.error || 'LINK FAILED');
                 }
-            } catch (e) {
-                alert('SERVER ERROR');
-                btn.disabled = false;
-                loader.style.display = 'none';
+            } catch (e) { showNotification('SERVER ERROR'); }
+            finally { toggleLoading(false); }
+        }
+
+        async function getQR() {
+            toggleLoading(true, 'GENERATING QR...');
+            try {
+                const res = await fetch('/qr');
+                const data = await res.json();
+                if (data.qr) {
+                    document.getElementById('qr-image').src = data.qr;
+                    document.getElementById('qr-display').style.display = 'block';
+                    document.getElementById('pairing-display').style.display = 'none';
+                    document.getElementById('result').style.display = 'block';
+                } else { showNotification(data.error || 'QR FAILED'); }
+            } catch (e) { showNotification('SERVER ERROR'); }
+            finally { toggleLoading(false); }
+        }
+
+        function toggleLoading(on, text = 'BYPASSING FIREWALLS...') {
+            document.getElementById('loader').style.display = on ? 'block' : 'none';
+            document.getElementById('loader-text').innerText = text;
+            document.getElementById('btn-submit').disabled = on;
+            document.getElementById('btn-qr').disabled = on;
+            if (on) document.getElementById('result').style.display = 'none';
+        }
+
+        async function copyCode() {
+            const code = document.getElementById('pairing-code').innerText;
+            if (code === '--------') return;
+            let copied = false;
+            try {
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(code);
+                    copied = true;
+                }
+            } catch (e) {}
+            if (!copied) {
+                const area = document.createElement('textarea');
+                area.value = code;
+                area.setAttribute('readonly', '');
+                area.style.position = 'fixed';
+                area.style.left = '-9999px';
+                document.body.appendChild(area);
+                area.select();
+                try { copied = document.execCommand('copy'); } catch (e) {}
+                area.remove();
+            }
+            const button = document.querySelector('.copy-btn');
+            if (copied && button) {
+                button.innerText = 'COPIED!';
+                setTimeout(() => { button.innerText = 'COPY CODE'; }, 2000);
+            }
+            showNotification(copied ? 'COPIED!' : 'COPY FAILED');
+        }
+
+        let audioPlaying = false;
+        function toggleAudio() {
+            const audio = document.getElementById('bg-audio');
+            const btn = document.getElementById('audio-btn');
+            if (audioPlaying) {
+                audio.pause();
+                audioPlaying = false;
+                btn.innerText = '🎵 BGM: OFF';
+            } else {
+                audio.play().then(() => {
+                    audioPlaying = true;
+                    btn.innerText = '🎵 BGM: ON';
+                }).catch(e => {
+                    showNotification('CLICK AGAIN TO PLAY AUDIO');
+                });
             }
         }
 
-        function pollStatus(key) {
+        function startPolling(key) {
+            stopPolling();
             pollInterval = setInterval(async () => {
                 try {
                     const res = await fetch(`/session-status/${key}`);
                     const data = await res.json();
-
-                    if (data.code) {
-                        document.getElementById('loader').style.display = 'none';
-                        document.getElementById('result').style.display = 'block';
-                        document.getElementById('code-display').innerText = data.code;
-                    }
-
-                    if (data.status === 'connected') {
-                        clearInterval(pollInterval);
-                        document.getElementById('status-text').innerText = 'LINKED SUCCESSFULLY';
-                        document.getElementById('status-text').style.color = '#fff';
+                    const msgEl = document.getElementById('status-text');
+                    const dotEl = document.getElementById('status-dot');
+                    
+                    if (data.status === 'open' || data.status === 'connected') {
+                        msgEl.innerHTML = '<span style="color:#fff; text-shadow: 0 0 10px #00ff00;">LINK SUCCESSFUL! SESSION SENT.</span>';
+                        dotEl.className = 'status-dot active';
+                        stopPolling();
+                    } else if (data.status === 'closed' || data.status === 'close') {
+                        msgEl.innerHTML = '<span style="color:#ff0000">CONNECTION CLOSED. RETRY.</span>';
+                        dotEl.className = 'status-dot error';
+                        stopPolling();
+                    } else {
+                        msgEl.innerText = 'STATUS: ' + data.status.toUpperCase() + '...';
+                        dotEl.className = 'status-dot';
                     }
                 } catch (e) {}
             }, 3000);
         }
 
-        function copyCode() {
-            const code = document.getElementById('code-display').innerText;
-            if (code === '--------') return;
-            navigator.clipboard.writeText(code).then(() => {
-                toast.style.display = 'block';
-                setTimeout(() => { toast.style.display = 'none'; }, 2000);
-            });
-        }
+        function stopPolling() { if (pollInterval) clearInterval(pollInterval); pollInterval = null; }
     </script>
 </body>
 </html>
