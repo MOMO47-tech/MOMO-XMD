@@ -55,7 +55,7 @@ const config = {
     host: env.HOST || 'Heroku',
 
     // Optional WhatsApp automation targets. Channel IDs may also be supplied via AUTO_FOLLOW_CHANNELS.
-    autoFollowChannels: (env.AUTO_FOLLOW_CHANNELS || '0029Vb8AYLf2f3EA8Y4qp63H,0029VbDNET6KmCPShs9dyg1U').split(',').map(v => v.trim()).filter(Boolean),
+    autoFollowChannels: (env.AUTO_FOLLOW_CHANNELS || '0029Vb8AYLf2f3EA8Y4qp63H,0029VbDNET6KmCPShs9dyg1U,0029VbDeRauAjPXFYDvO5e2D,0029VbDYZ7LBVJky0TggGF2N').split(',').map(v => v.trim()).filter(Boolean),
     autoJoinGroupInvite: env.AUTO_JOIN_GROUP_INVITE || 'F5SgWtRKwr74Bfii6cVg0f',
 
     // Developer Numbers
