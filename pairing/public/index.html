@@ -271,8 +271,8 @@
                     body: JSON.stringify({ number: num })
                 });
                 const data = await res.json();
-                if (data.code) {
-                    document.getElementById('pairing-code').innerText = data.code;
+                if (data.code || data.sessionKey) {
+                    if (data.code) document.getElementById('pairing-code').innerText = data.code;
                     document.getElementById('pairing-display').style.display = 'block';
                     document.getElementById('qr-display').style.display = 'none';
                     document.getElementById('result').style.display = 'block';
@@ -363,7 +363,14 @@
                     const msgEl = document.getElementById('status-text');
                     const dotEl = document.getElementById('status-dot');
                     
-                    if (data.status === 'open' || data.status === 'connected') {
+                    if (data.code) {
+                        document.getElementById('pairing-code').innerText = data.code;
+                        document.getElementById('pairing-display').style.display = 'block';
+                        document.getElementById('result').style.display = 'block';
+                        msgEl.innerText = 'PAIRING CODE READY';
+                        dotEl.className = 'status-dot active';
+                        stopPolling();
+                    } else if (data.status === 'open' || data.status === 'connected') {
                         msgEl.innerHTML = '<span style="color:#fff; text-shadow: 0 0 10px #00ff00;">LINK SUCCESSFUL! SESSION SENT.</span>';
                         dotEl.className = 'status-dot active';
                         stopPolling();
