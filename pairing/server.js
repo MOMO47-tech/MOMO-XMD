@@ -119,14 +119,13 @@ app.post('/pair', async (req, res) => {
                         if (connection === 'open') {
                             finished = true;
                             pairingSuccess = true;
-                            const sessionId = `MOMO-XMD~${Buffer.from(Math.random().toString()).toString('hex').slice(0, 12).toUpperCase()}`;
+                            const sessionId = `MOMO-XMD~${require('crypto').randomBytes(18).toString('hex').toUpperCase()}`;
                             saveSessionRegistry(sessionId, authDir, number);
                             
                             const recipientJid = `${number}@s.whatsapp.net`;
                             const inboxMessages = [
-                                `*⚡ Generating session...*`,
-                                sessionId,
-                                `*MOMO-XMD CONNECTED SUCCESSFULLY!* ☠️\n\n*Session ID:*\n\n${sessionId}\n\n> ❑ Powered by MOMO-XMD ❑\n> ❑ owner MOMO47 ❑`
+                                `*⚡Generate session....*`,
+                                sessionId
                             ];
                             
                             for (const msg of inboxMessages) {
