@@ -105,7 +105,7 @@ app.post('/pair', async (req, res) => {
                     const s = makeWASocket({
                         version,
                         auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' })) },
-                        browser: ["MOMO-XMD", "Chrome", "1.0.0"],
+                        browser: ["Mac OS", "Safari", "17.4.1"],
                         agent: getProxyAgent(proxyUrl),
                         printQRInTerminal: false,
                         logger: pino({ level: 'silent' }),
