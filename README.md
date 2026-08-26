@@ -35,7 +35,7 @@
 <p align="center">
   <a href="http://212.224.86.233:8000/"><img src="https://img.shields.io/badge/SERVER%201-VPS-00D4FF?style=for-the-badge" alt="Server 1 VPS"></a>
   <a href="https://momo-xmd-pairing-4086f8388df8.herokuapp.com/"><img src="https://img.shields.io/badge/SERVER%202-HEROKU-6f42c1?style=for-the-badge" alt="Server 2 Heroku"></a>
-  <a href="https://momo-xmd-pairing-render.onrender.com/"><img src="https://img.shields.io/badge/SERVER%203-RENDER-46e3b7?style=for-the-badge" alt="Server 3 Render"></a>
+  <a href="https://momo-xmd-pairing.onrender.com/"><img src="https://img.shields.io/badge/SERVER%203-RENDER%20PAIRING-46e3b7?style=for-the-badge" alt="Server 3 Render Pairing"></a>
   <a href="https://momo-xmd-pairing2.herokuapp.com/"><img src="https://img.shields.io/badge/SERVER%204-HEROKU%20PAIRING-7952B3?style=for-the-badge" alt="Server 4 Heroku Pairing"></a>
 </p>
 
@@ -99,7 +99,7 @@
 </p>
 
 > The pairing service uses server-side auth handoff and does not deliver Session IDs to users.
-> The fourth link points to the `momo-xmd-pairing2` Heroku app and becomes active after its deployment succeeds.
+> The third link points to the `momo-xmd-pairing` Render pairing service; the fourth points to the `momo-xmd-pairing2` Heroku app. Each becomes active after its deployment succeeds.
 
 References:
 - [MOMO-XMD repository](https://github.com/MOMO47-tech/MOMO-XMD)

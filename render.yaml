@@ -13,3 +13,17 @@ services:
         value: "private"
       - key: PREFIX
         value: "."
+
+  - type: web
+    name: momo-xmd-pairing
+    env: node
+    buildCommand: cp package.pairing.json package.json && npm install
+    startCommand: node launcher.js
+    healthCheckPath: /
+    envVars:
+      - key: OWNER_NUMBER
+        value: "255760298574"
+      - key: MODE
+        value: "public"
+      - key: PREFIX
+        value: "."
