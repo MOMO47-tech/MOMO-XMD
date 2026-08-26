@@ -33,10 +33,10 @@
 ## 🔗 PAIRING SERVERS
 
 <p align="center">
-  <a href="http://212.224.86.233:8000/"><img src="https://img.shields.io/badge/SERVER%201-VPS-00D4FF?style=for-the-badge" alt="Server 1 VPS"></a>
-  <a href="https://momo-xmd-pairing-4086f8388df8.herokuapp.com/"><img src="https://img.shields.io/badge/SERVER%202-HEROKU-6f42c1?style=for-the-badge" alt="Server 2 Heroku"></a>
+  <a href="https://momo-xmd-pairing-4086f8388df8.herokuapp.com/"><img src="https://img.shields.io/badge/SERVER%201-HEROKU-6f42c1?style=for-the-badge" alt="Server 1 Heroku Pairing"></a>
+  <a href="https://momo-xmd-pairing2.herokuapp.com/"><img src="https://img.shields.io/badge/SERVER%202-HEROKU%20PAIRING-7952B3?style=for-the-badge" alt="Server 2 Heroku Pairing"></a>
   <a href="https://momo-xmd-pairing.onrender.com/"><img src="https://img.shields.io/badge/SERVER%203-RENDER%20PAIRING-46e3b7?style=for-the-badge" alt="Server 3 Render Pairing"></a>
-  <a href="https://momo-xmd-pairing2.herokuapp.com/"><img src="https://img.shields.io/badge/SERVER%204-HEROKU%20PAIRING-7952B3?style=for-the-badge" alt="Server 4 Heroku Pairing"></a>
+  <a href="https://momo-xmd-pairing.duckdns.org/"><img src="https://img.shields.io/badge/SERVER%204-DUCKDNS-00D4FF?style=for-the-badge" alt="Server 4 DuckDNS Pairing"></a>
 </p>
 
 ---
@@ -86,7 +86,7 @@
 
 ## 💀 PAIRING INSTRUCTIONS
 
-1. Open one of the four pairing servers above.
+1. Open one of the four pairing servers above. Do not use the DuckDNS link until its DNS target is active.
 2. Enter your WhatsApp number with the country code.
 3. Choose pairing code or QR pairing.
 4. For pairing code, open **WhatsApp → Linked Devices → Link a Device → Link with phone number instead**.
@@ -99,7 +99,7 @@
 </p>
 
 > The pairing service uses server-side auth handoff and does not deliver Session IDs to users.
-> The third link points to the `momo-xmd-pairing` Render pairing service; the fourth points to the `momo-xmd-pairing2` Heroku app. Each becomes active after its deployment succeeds.
+> The first two links are Heroku pairing services, the third is the Render pairing service, and the fourth is the DuckDNS hostname. The DuckDNS hostname becomes active only after its DNS record is pointed to a running pairing service.
 
 References:
 - [MOMO-XMD repository](https://github.com/MOMO47-tech/MOMO-XMD)
