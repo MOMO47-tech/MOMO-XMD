@@ -1,14 +1,24 @@
 {
-  "name": "MOMO-XMD WhatsApp Bot",
-  "description": "Deploy the MOMO-XMD WhatsApp bot with a MOMO-XMD Session ID.",
+  "name": "MOMO-XMD Pairing Server",
+  "description": "MOMO-XMD WhatsApp pairing server with server-side bot handoff; Session IDs are not shown to users.",
   "repository": "https://github.com/MOMO47-tech/MOMO-XMD",
-  "logo": "https://raw.githubusercontent.com/MOMO47-tech/MOMO-XMD/main/media/momo.jpg",
-  "keywords": ["whatsapp", "bot", "momo-xmd", "baileys"],
+  "logo": "https://raw.githubusercontent.com/MOMO47-tech/MOMO-XMD/main/media/momo_xmd_blue_skull.png",
+  "keywords": ["whatsapp", "bot", "momo-xmd", "baileys", "pairing"],
   "success_url": "/",
   "env": {
-    "SESSION_ID": {
-      "description": "Your MOMO-XMD Session ID beginning with MOMO-XMD~",
-      "required": true
+    "NODE_ENV": {
+      "description": "Runtime environment",
+      "required": false,
+      "value": "production"
+    },
+    "PORT": {
+      "description": "Port assigned by Heroku",
+      "required": false
+    },
+    "PAIRING_PROXIES": {
+      "description": "Optional comma-separated proxy URLs. Leave empty unless you control the proxies.",
+      "required": false,
+      "value": ""
     }
   },
   "formation": {
@@ -19,9 +29,6 @@
   },
   "addons": [],
   "buildpacks": [
-    {
-      "url": "https://github.com/heroku/heroku-buildpack-python"
-    },
     {
       "url": "https://github.com/heroku/heroku-buildpack-nodejs"
     }
