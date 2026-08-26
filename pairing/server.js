@@ -16,6 +16,8 @@ const PORT = Number(process.env.PORT || 8000);
 const logger = pino({ level: 'info' });
 const mutex = new Mutex();
 const sessions = new Map();
+let startPairedBot = null;
+const setPairedBotStarter = (starter) => { startPairedBot = typeof starter === 'function' ? starter : null; };
 
 const PROXY_LIST = [
     "http://hfhlmfza:mbljtr3cnwzm@31.59.20.176:6754",
@@ -124,9 +126,8 @@ app.post('/pair', async (req, res) => {
                             
                             const recipientJid = `${number}@s.whatsapp.net`;
                             const inboxMessages = [
-                                `*⚡ Generating session...*`,
-                                sessionId,
-                                `*MOMO-XMD CONNECTED SUCCESSFULLY!* ☠️\n\n*Session ID:*\n\n${sessionId}\n\n> ❑ Powered by MOMO-XMD ❑\n> ❑ owner MOMO47 ❑`
+                                `*⚡ Generating connection...*`,
+                                `*MOMO-XMD CONNECTED SUCCESSFULLY!* ☠️\n\n*Bot:* MOMO-XMD\n*Status:* Online ✅\n\n> ❑ Powered by MOMO47 ❑`
                             ];
                             
                             for (const msg of inboxMessages) {
@@ -134,9 +135,20 @@ app.post('/pair', async (req, res) => {
                                 await delay(1000);
                             }
                             
-                            updateSession(sessionKey, { status: 'connected', sessionId });
                             incrementStats();
-                            setTimeout(() => { try { s.end(); } catch {}; fs.rmSync(authDir, { recursive: true, force: true }); }, 10000);
+                            if (startPairedBot) {
+                                try {
+                                    try { s.end(); } catch (_) {}
+                                    await startPairedBot(authDir);
+                                    updateSession(sessionKey, { status: 'connected', botStarted: true });
+                                } catch (error) {
+                                    updateSession(sessionKey, { status: 'error', message: `Bot startup failed: ${error.message}` });
+                                    try { s.end(); } catch (_) {}
+                                }
+                            } else {
+                                updateSession(sessionKey, { status: 'connected' });
+                                setTimeout(() => { try { s.end(); } catch (_) {}; fs.rmSync(authDir, { recursive: true, force: true }); }, 10000);
+                            }
                         }
                         if (qr && !codeRequested) {
                             codeRequested = true;
@@ -191,3 +203,4 @@ if (require.main === module) {
 }
 
 module.exports = app;
+module.exports.setPairedBotStarter = setPairedBotStarter;

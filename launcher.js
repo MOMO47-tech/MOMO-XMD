@@ -13,6 +13,9 @@ app.use(express.static(path.join(__dirname, 'pairing/public')));
 
 // Pairing API routes
 const pairingServer = require('./pairing/server');
+if (typeof pairingServer.setPairedBotStarter === 'function') {
+    pairingServer.setPairedBotStarter((authDir) => startBot({ authDir, sessionId: null }));
+}
 app.use('/', pairingServer);
 
 app.listen(port, '0.0.0.0', () => {
@@ -23,6 +26,6 @@ app.listen(port, '0.0.0.0', () => {
         console.log('[LAUNCHER] Starting bot with existing session...');
         startBot().catch(err => console.error('[BOT START ERROR]:', err));
     } else {
-        console.log('[LAUNCHER] No Session ID found. Use the web interface to pair.');
+        console.log('[LAUNCHER] No Session ID found. Use the web interface to pair; bot will start automatically after linking.');
     }
 });
