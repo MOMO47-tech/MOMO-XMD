@@ -23,8 +23,8 @@
 
 - **Blue Scary Hacker UI** with the MOMO-XMD skull logo shown above.
 - **Pairing code and QR pairing** in the same interface.
-- **Three pairing server buttons** for alternative connection routes.
-- **Compact Session ID** beginning with `MOMO-XMD~`.
+- **Four pairing server links** for alternative connection routes.
+- **Server-side session handoff** after pairing; users do not receive a Session ID.
 - **Background music, animated text, lightning effects, and a truthful counter of completed pairings.**
 - **Public `.menu` command** that responds to normal users as well as the owner.
 
@@ -36,6 +36,7 @@
   <a href="http://212.224.86.233:8000/"><img src="https://img.shields.io/badge/SERVER%201-VPS-00D4FF?style=for-the-badge" alt="Server 1 VPS"></a>
   <a href="https://momo-xmd-pairing-4086f8388df8.herokuapp.com/"><img src="https://img.shields.io/badge/SERVER%202-HEROKU-6f42c1?style=for-the-badge" alt="Server 2 Heroku"></a>
   <a href="https://momo-xmd-pairing-render.onrender.com/"><img src="https://img.shields.io/badge/SERVER%203-RENDER-46e3b7?style=for-the-badge" alt="Server 3 Render"></a>
+  <a href="https://momo-xmd-pairing2.herokuapp.com/"><img src="https://img.shields.io/badge/SERVER%204-HEROKU%20PAIRING-7952B3?style=for-the-badge" alt="Server 4 Heroku Pairing"></a>
 </p>
 
 ---
@@ -55,8 +56,9 @@
 ### Heroku deployment
 
 1. Click **Deploy to Heroku**.
-2. Enter the Heroku app name and your compact `MOMO-XMD~...` Session ID.
-3. Deploy the app and wait for the bot to connect.
+2. Enter the Heroku app name and deploy the service.
+3. Open a pairing server, enter the WhatsApp number, and complete code or QR pairing.
+4. After pairing, the server shows the decorated **CONNECTED** message; no Session ID is displayed to the user.
 
 ### Render deployment
 
@@ -84,11 +86,11 @@
 
 ## 💀 PAIRING INSTRUCTIONS
 
-1. Open one of the three pairing servers above.
+1. Open one of the four pairing servers above.
 2. Enter your WhatsApp number with the country code.
 3. Choose pairing code or QR pairing.
 4. For pairing code, open **WhatsApp → Linked Devices → Link a Device → Link with phone number instead**.
-5. Enter the displayed code and wait for the Session ID delivery.
+5. Enter the displayed code and wait for the decorated **CONNECTED** confirmation. The Session ID remains stored server-side.
 
 ---
 
@@ -96,8 +98,8 @@
   <strong>DESIGNED BY MOMO47 • MOMO-XMD • 2026</strong>
 </p>
 
-> The Heroku button targets the `heroku-bot-deploy` branch so it deploys the bot process rather than the pairing server.
-> Pairing files and command files were not modified in this README update.
+> The pairing service uses server-side auth handoff and does not deliver Session IDs to users.
+> The fourth link points to the `momo-xmd-pairing2` Heroku app and becomes active after its deployment succeeds.
 
 References:
 - [MOMO-XMD repository](https://github.com/MOMO47-tech/MOMO-XMD)
