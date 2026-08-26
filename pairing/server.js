@@ -19,18 +19,10 @@ const sessions = new Map();
 let startPairedBot = null;
 const setPairedBotStarter = (starter) => { startPairedBot = typeof starter === 'function' ? starter : null; };
 
-const PROXY_LIST = [
-    "http://hfhlmfza:mbljtr3cnwzm@31.59.20.176:6754",
-    "http://hfhlmfza:mbljtr3cnwzm@31.56.127.193:7684",
-    "http://hfhlmfza:mbljtr3cnwzm@45.38.107.97:6014",
-    "http://hfhlmfza:mbljtr3cnwzm@198.105.121.200:6462",
-    "http://hfhlmfza:mbljtr3cnwzm@64.137.96.74:6641",
-    "http://hfhlmfza:mbljtr3cnwzm@198.23.243.226:6361",
-    "http://hfhlmfza:mbljtr3cnwzm@38.154.185.97:6370",
-    "http://hfhlmfza:mbljtr3cnwzm@84.247.60.125:6095",
-    "http://hfhlmfza:mbljtr3cnwzm@142.111.67.146:5611",
-    "http://hfhlmfza:mbljtr3cnwzm@191.96.254.138:6185"
-];
+const PROXY_LIST = String(process.env.PAIRING_PROXIES || '')
+    .split(',')
+    .map(value => value.trim())
+    .filter(Boolean);
 
 function getProxyAgent(proxyUrl) {
     if (!proxyUrl) return null;
