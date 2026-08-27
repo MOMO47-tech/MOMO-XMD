@@ -258,7 +258,11 @@ async function runPairingAttempt({ sessionKey, number, proxyUrl, attempt }) {
                 const retryable = code === DisconnectReason.restartRequired
                     || code === DisconnectReason.timedOut
                     || code === 515
-                    || code === 408;
+                    || code === 408
+                    || code === 428
+                    || code === 502
+                    || code === 503
+                    || code === 504;
                 if (retryable && reconnectCount < 2) {
                     reconnectCount += 1;
                     codeRequested = false;
