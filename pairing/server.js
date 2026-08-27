@@ -255,6 +255,33 @@ async function runPairingAttempt({ sessionKey, number, proxyUrl, attempt }) {
 
             if (connection === 'close' && !pairingOpened && !settled) {
                 const code = statusCodeFromDisconnect(lastDisconnect);
+                const linkedIdentity = Boolean(state?.creds?.me?.id || state?.creds?.me?.jid);
+
+                // WhatsApp can close the short-lived pairing socket with 503 just
+                // after the user accepts the code. If the auth state already has
+                // a linked identity, hand it to the bot instead of discarding it
+                // and asking the user to pair a second time.
+                if (linkedIdentity) {
+                    pairingOpened = true;
+                    try {
+                        await saveCreds();
+                    } catch (error) {
+                        logger.warn({ error: error.message }, 'Could not save linked auth after pairing socket close');
+                    }
+                    incrementStats();
+                    updateSession(sessionKey, {
+                        status: 'bot_starting',
+                        attempt,
+                        code: undefined,
+                        sessionId: undefined,
+                        message: `Linked auth detected after WhatsApp close (${code || 'unknown'}); starting bot`
+                    });
+                    closeSocket(sock);
+                    void startBotFromAuth(sessionKey, authDir);
+                    finish({ success: true, authDir });
+                    return;
+                }
+
                 const retryable = code === DisconnectReason.restartRequired
                     || code === DisconnectReason.timedOut
                     || code === 515
