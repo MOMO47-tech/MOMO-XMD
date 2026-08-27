@@ -1,15 +1,32 @@
-#!/bin/bash
-TARGET_DIR="/root/MOMO-XMD"
-echo "Deploying to $TARGET_DIR..."
+#!/usr/bin/env bash
+set -euo pipefail
 
-# Copy files to VPS
-scp -o StrictHostKeyChecking=no /home/ubuntu/MOMO-XMD/pairing/server_final.js root@212.224.86.233:$TARGET_DIR/pairing/server.js
-scp -o StrictHostKeyChecking=no /home/ubuntu/MOMO-XMD/pairing/public/index.html root@212.224.86.233:$TARGET_DIR/pairing/public/index.html
+REMOTE_HOST="${MOMO_XMD_REMOTE_HOST:-root@212.224.86.233}"
+REMOTE_DIR="${MOMO_XMD_REMOTE_DIR:-/root/MOMO-XMD}"
+BRANCH="${MOMO_XMD_BRANCH:-main}"
 
-# Install necessary proxy agents on VPS
-ssh -o StrictHostKeyChecking=no root@212.224.86.233 "cd $TARGET_DIR/pairing && npm install http-proxy-agent https-proxy-agent socks-proxy-agent"
+printf 'Syncing MOMO-XMD on %s from branch %s...\n' "$REMOTE_HOST" "$BRANCH"
+ssh -o StrictHostKeyChecking=accept-new "$REMOTE_HOST" "
+  set -e
+  if [ ! -d '$REMOTE_DIR/.git' ]; then
+    mkdir -p \"$(dirname '$REMOTE_DIR')\"
+    git clone --branch '$BRANCH' https://github.com/MOMO47-tech/MOMO-XMD.git '$REMOTE_DIR'
+  fi
+  cd '$REMOTE_DIR'
+  git fetch origin '$BRANCH'
+  git checkout '$BRANCH'
+  git pull --ff-only origin '$BRANCH'
+  npm install --omit=dev
+  if command -v pm2 >/dev/null 2>&1; then
+    if pm2 describe MOMO-XMD >/dev/null 2>&1; then
+      pm2 restart MOMO-XMD --update-env
+    else
+      PORT=8000 NODE_ENV=production pm2 start launcher.js --name MOMO-XMD
+      pm2 save
+    fi
+  else
+    echo 'PM2 haipo; code imesync lakini launcher haikuanza moja kwa moja.'
+  fi
+"
 
-# Restart the service
-ssh -o StrictHostKeyChecking=no root@212.224.86.233 "pm2 restart all"
-
-echo "Deployment complete!"
+printf 'MOMO-XMD sync completed. Pair kupitia pairing page; bot itaanza baada ya code kukubaliwa.\n'

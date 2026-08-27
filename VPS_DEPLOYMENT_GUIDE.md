@@ -1,188 +1,104 @@
-# MOMO-XMD — Complete VPS Deployment Guide (Step by Step)
+# MOMO-XMD VPS na Termux Guide
 
-Follow these steps **exactly** on your VPS (212.224.86.233).
+MOMO-XMD ina pairing server pamoja na bot handoff ndani ya `launcher.js`. Baada ya user kukubali pairing code, server huanzisha bot yenyewe na hutuma ujumbe wa **CONNECTED**. User hapati Session ID wala hatakiwi kuweka credential kwenye Heroku, Render au Termux.
 
----
-
-## STEP 1: SSH into your VPS
+## Kuweka code kwenye VPS
 
 ```bash
 ssh root@212.224.86.233
-```
-
----
-
-## STEP 2: Stop the running bot (if any)
-
-```bash
-# Find the running process on port 8000
-kill $(lsof -t -i:8000) 2>/dev/null
-
-# Or find and kill any node process running MOMO-XMD
-pkill -f "node main.js" 2>/dev/null
-
-# Verify nothing is running on port 8000
-lsof -i:8000
-```
-
----
-
-## STEP 3: Remove old session files and old code
-
-```bash
-# Go to your bot directory
 cd /root
-
-# Remove old session folders (these contain old auth that blocks pairing)
-rm -rf MOMO-XMD/auth_info
-rm -rf MOMO-XMD/auth_info_qr
-rm -rf MOMO-XMD/auth_pairing_temp_*
-rm -rf MOMO-XMD/lib/store.json
-rm -rf MOMO-XMD/lib/database.json
-
-# Remove old code completely
-rm -rf MOMO-XMD
+if [ -d MOMO-XMD/.git ]; then
+  cd MOMO-XMD
+  git fetch origin main
+  git checkout main
+  git pull --ff-only origin main
+else
+  git clone --branch main https://github.com/MOMO47-tech/MOMO-XMD.git
+  cd MOMO-XMD
+fi
+npm install --omit=dev
 ```
 
----
-
-## STEP 4: Clone fresh code from GitHub
+Anzisha kwa majaribio:
 
 ```bash
-# Clone the updated repo (with all fixes)
-git clone https://github.com/MOMO47-tech/MOMO-XMD.git
-
-# Enter the directory
-cd MOMO-XMD
+cd /root/MOMO-XMD
+PORT=8000 NODE_ENV=production node launcher.js
 ```
 
----
+Pairing page ni <http://212.224.86.233:8000/> na health endpoint ni <http://212.224.86.233:8000/health>.
 
-## STEP 5: Install dependencies
+## Kuweka service iendelee na PM2
 
 ```bash
-# Install npm packages
-npm install
-
-# If you get canvas errors, install with:
-npm install --ignore-scripts
-
-# Install system dependencies for canvas (if needed)
-sudo apt-get update
-sudo apt-get install -y build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
-```
-
----
-
-## STEP 6: Start the bot and pairing server
-
-```bash
-# Start the bot (this runs pairing server on port 8000 + WhatsApp bot)
-node main.js
-```
-
----
-
-## STEP 7: Test pairing
-
-Open your browser and go to:
-
-```
-http://212.224.86.233:8000
-```
-
-You should see:
-- MOMO-XMD pairing page
-- 5 tabs: VPS Server, Heroku 1, Heroku 2, Render, QR Code
-- Enter your phone number → click GENERATE PAIRING CODE
-- You will receive a code → enter it in WhatsApp Linked Devices
-- After pairing, you will receive SESSION_ID in your WhatsApp inbox (starts with `MOMO-XMD_`)
-
----
-
-## STEP 8: Deploy to Heroku (Optional)
-
-1. Go to: https://dashboard.heroku.com/apps/momo-xmd-pairing1
-2. OR click deploy button: https://heroku.com/deploy?template=https://github.com/MOMO47-tech/MOMO-XMD
-3. Set Config Vars:
-   - `SESSION_ID` = the code you received in WhatsApp (e.g., `MOMO-XMD_255712345678`)
-   - `OWNER_NUMBER` = `255760298574`
-   - `MODE` = `private`
-   - `PREFIX` = `.`
-4. Click Deploy
-
----
-
-## STEP 9: Deploy to Render (Optional)
-
-1. Go to: https://render.com/deploy?repo=https://github.com/MOMO47-tech/MOMO-XMD
-2. Set Environment Variables:
-   - `SESSION_ID` = your session ID
-   - `OWNER_NUMBER` = `255760298574`
-   - `MODE` = `private`
-   - `PREFIX` = `.`
-3. Click Create Web Service
-
----
-
-## STEP 10: Use pm2 for auto-restart (Recommended)
-
-```bash
-# Install pm2 globally
 sudo npm install -g pm2
-
-# Start bot with pm2
-pm2 start main.js --name momo-xmd
-
-# Save pm2 config
+cd /root/MOMO-XMD
+PORT=8000 NODE_ENV=production pm2 start launcher.js --name MOMO-XMD
 pm2 save
-
-# Set pm2 to start on boot
 pm2 startup
-
-# Check status
 pm2 status
-
-# View logs
-pm2 logs momo-xmd
-
-# Restart bot
-pm2 restart momo-xmd
-
-# Stop bot
-pm2 stop momo-xmd
+pm2 logs MOMO-XMD
 ```
 
----
+Kama service tayari ipo, tumia:
+
+```bash
+cd /root/MOMO-XMD
+git pull --ff-only origin main
+npm install --omit=dev
+pm2 restart MOMO-XMD --update-env
+```
+
+## Termux
+
+```bash
+pkg update -y
+pkg install nodejs git -y
+cd /data/data/com.termux/files/home
+if [ -d MOMO-XMD/.git ]; then
+  cd MOMO-XMD
+  git fetch origin main
+  git checkout main
+  git pull --ff-only origin main
+else
+  git clone --branch main https://github.com/MOMO47-tech/MOMO-XMD.git
+  cd MOMO-XMD
+fi
+npm install --omit=dev
+NODE_ENV=production PORT=8000 node launcher.js
+```
+
+Termux inahitaji kubaki online ili pairing server na bot viendelee kufanya kazi. Kama unatumia PM2 ndani ya Termux, unaweza kuanzisha `node launcher.js` kupitia process manager unayo tayari badala ya kuendesha command hiyo kila mara.
+
+## Pairing na post-connect automation
+
+1. Fungua pairing page ya VPS, Heroku pairing1, Heroku pairing2 au Render.
+2. Weka namba ya WhatsApp kwenye ukurasa wa pairing na pata code.
+3. Ingiza code ndani ya **WhatsApp → Linked Devices → Link a device → Link with phone number instead**.
+4. Baada ya code kukubaliwa, pairing page itaonyesha hali ya connection na account itapokea **CONNECTED**.
+5. Bot huanza kujibu commands mara moja. Follow ya channels nne na join ya group huendelea kwa background, hivyo hazicheleweshi CONNECTED wala command dispatcher.
+
+## Pairing links
+
+| Server | URL |
+|---|---|
+| Heroku pairing1 | <https://momo-xmd-pairing-4086f8388df8.herokuapp.com/> |
+| Heroku pairing2 | <https://momo-xmd-pairing2-fd35d1ed19df.herokuapp.com/> |
+| Render | <https://momo-xmd-pairing.onrender.com/> |
+| VPS | <http://212.224.86.233:8000/> |
+| DuckDNS | <https://momo-xmd-pairing.duckdns.org/> |
 
 ## Troubleshooting
 
-| Problem | Solution |
-|---------|----------|
-| Port 8000 already in use | `kill $(lsof -t -i:8000)` |
-| `node_modules` missing | `npm install` |
-| Pairing code not showing | Wait 3-5 seconds after entering number |
-| Session expired | Pair again and get new SESSION_ID |
-| Bot not responding | Check `pm2 logs momo-xmd` |
-| Canvas error | `npm install --ignore-scripts` |
+| Tatizo | Hatua ya kuchukua |
+|---|---|
+| `/health` inarudisha 404 | Service hiyo bado ina build ya zamani; redeploy kutoka `main` au `heroku-bot-deploy`. |
+| Code haionekani | Kagua `pm2 logs MOMO-XMD` au server log, kisha jaribu pairing request mpya. |
+| CONNECTED haifiki | Hakikisha process ina-run `node launcher.js`, si `node main.js`, na socket imefika `open`. |
+| Bot haijibu command | Jaribu `.ping` baada ya CONNECTED na kagua kama PM2 ina process moja tu ya launcher. |
+| Follow/join haijakamilika | Kagua logs za post-connect automation na permissions za account; tasks hizi hazipaswi kuzuia commands. |
+| Code ya zamani imegoma | Futa pairing attempt iliyokwisha muda, kisha anza pairing mpya; usitafute Session ID. |
 
----
+## Muhimu wa usalama
 
-## Important Commands Summary
-
-```bash
-# Stop bot
-kill $(lsof -t -i:8000)
-
-# Remove old sessions
-rm -rf /root/MOMO-XMD/auth_info /root/MOMO-XMD/auth_info_qr /root/MOMO-XMD/auth_pairing_temp_*
-
-# Pull latest code
-cd /root/MOMO-XMD && git pull origin main && npm install
-
-# Start bot
-cd /root/MOMO-XMD && node main.js
-
-# Or with pm2
-pm2 restart momo-xmd
-```
+Usiweke namba, pairing code au credential kwenye GitHub, README, public log, au ujumbe wa kawaida. Pairing page hutumia cookie ya HttpOnly kwa status polling; auth handoff inabaki server-side.

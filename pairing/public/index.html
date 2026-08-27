@@ -363,20 +363,24 @@
                         document.getElementById('pairing-code').innerText = data.code;
                         document.getElementById('pairing-display').style.display = 'block';
                         document.getElementById('result').style.display = 'block';
-                        document.getElementById('code-display').innerText = data.code;
+                        const codeDisplay = document.getElementById('code-display');
+                        if (codeDisplay) codeDisplay.innerText = data.code;
                     }
 
                     if (data.status === 'connected') {
                         clearInterval(pollInterval);
                         document.getElementById('status-text').innerText = 'BOT CONNECTED — START USING COMMANDS';
                         document.getElementById('status-text').style.color = '#00ff88';
-                        document.getElementById('submit-btn').disabled = false;
+                        document.getElementById('btn-submit').disabled = false;
+                        document.getElementById('btn-qr').disabled = false;
+                        document.getElementById('loader').style.display = 'none';
                     }
                     if (data.status === 'error' || data.status === 'not_found') {
                         clearInterval(pollInterval);
                         document.getElementById('status-text').innerText = data.message || 'PAIRING FAILED — TRY AGAIN';
                         document.getElementById('status-text').style.color = '#ff3355';
-                        document.getElementById('submit-btn').disabled = false;
+                        document.getElementById('btn-submit').disabled = false;
+                        document.getElementById('btn-qr').disabled = false;
                         document.getElementById('loader').style.display = 'none';
                     }
                 } catch (e) {}
