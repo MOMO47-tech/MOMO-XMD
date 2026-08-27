@@ -19,6 +19,10 @@ const app = express();
 app.use(express.json({ limit: '1mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+app.get(['/health', '/healthz'], (_req, res) => {
+    res.json({ ok: true, service: 'momo-xmd-pairing', uptime: process.uptime() });
+});
+
 const PORT = Number(process.env.PORT || 8000);
 const logger = pino({ level: process.env.LOG_LEVEL || 'info' });
 const setupMutex = new Mutex();
