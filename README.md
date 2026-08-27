@@ -94,6 +94,29 @@ Emoji moja tu kati ya hizo inaruhusiwa, na setting yake huhifadhiwa kwenye runti
 
 `.autoreact on` hu-react kwa ujumbe mpya unaoingia kwenye inbox na groups; `.autoreact off` huizima. Autoreact hutumia ❤️ na haireact messages zinazotumwa na bot yenyewe.
 
+## Security and presence automation
+
+Owner anaweza kuwasha ulinzi wa defensive dhidi ya media/files zenye viashiria vya payload hatari, extension hatari, control-character flood au document isiyoaminika:
+
+```text
+.antibug on
+.antibug off
+```
+
+Ikiwa imewashwa, bot hujaribu **ku-delete ujumbe**, **kumblock mtumaji** na kuweka tukio kwenye log mara moja. Ikiwa Baileys build inayotumika ina `reportMessage`, bot hujaribu report moja ya spam kwa ujumbe huo; WhatsApp ndiyo huamua hatua yoyote zaidi, hivyo bot haiwezi kuahidi au kulazimisha kufungiwa account ya mtu.
+
+```text
+.autorecording on
+.autorecording off
+```
+
+```text
+.autotyping on
+.autotyping off
+```
+
+`autorecording` huonyesha presence ya recording kwenye inbox na groups zinazojulikana, huku `autotyping` ikiweka presence ya typing/composing. Presence husasishwa kwa heartbeat fupi wakati setting iko on na huwekwa paused baada ya zote kuzimwa. Features hizi hazitumii Session ID wala background service tofauti.
+
 ## Block management
 
 Owner anaweza kuangalia idadi na orodha ya users walioblock kwa:
