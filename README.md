@@ -79,6 +79,21 @@
 
 Owner anaweza kutumia `.autoviewstatus on` ku-mark status za contacts kama viewed mara moja baada ya kupokelewa, ikiwemo status zinazotumwa na contacts wanaoonekana kupitia groups. Tumia `.autoviewstatus off` kuizima. Kupenda status ni setting tofauti: `.autolikestatus on` huongeza reaction ya like, na haihitajiki ili viewing ifanye kazi.
 
+Emoji ya status like huchaguliwa na owner kwa command hii:
+
+```text
+.setstatus emoj 💚
+.setstatus emoj ❤️
+.setstatus emoj 🔥
+.setstatus emoj 💔
+.setstatus emoj ❤️‍🩹
+.setstatus emoj ✅
+```
+
+Emoji moja tu kati ya hizo inaruhusiwa, na setting yake huhifadhiwa kwenye runtime. `.setstatusemoj <emoji>` bado inafanya kazi kama alias. Ikiwa `.autolikestatus on` imewashwa, emoji iliyochaguliwa ndiyo itatumika kwenye status likes.
+
+`.autoreact on` hu-react kwa ujumbe mpya unaoingia kwenye inbox na groups; `.autoreact off` huizima. Autoreact hutumia ❤️ na haireact messages zinazotumwa na bot yenyewe.
+
 Baada ya **CONNECTED**, Termux runtime huendelea na channel follows nne na group join kwa background; kazi hizo hazipaswi kuchelewesha command handling.
 
 ---
