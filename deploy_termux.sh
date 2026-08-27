@@ -36,11 +36,20 @@ fi
 
 HEALTH_URL="http://127.0.0.1:${PORT_NUMBER}/health"
 printf '%s\n' "Health check baada ya kuanza: $HEALTH_URL"
-sleep 3
-if curl -fsS --max-time 10 "$HEALTH_URL"; then
-  printf '\n%s\n' "MOMO-XMD health iko sawa."
+health_ok=0
+for attempt in $(seq 1 30); do
+  if health_body=$(curl -fsS --max-time 3 "$HEALTH_URL" 2>/dev/null); then
+    printf '%s\n' "$health_body"
+    health_ok=1
+    break
+  fi
+  printf 'Launcher bado inaanza... (%s/30)\n' "$attempt"
+  sleep 1
+done
+if [ "$health_ok" -eq 1 ]; then
+  printf '%s\n' "MOMO-XMD health iko sawa."
 else
-  printf '\n%s\n' "Health check imeshindwa; angalia logs kwa: pm2 logs $PROCESS_NAME --lines 80 --nostream"
+  printf '%s\n' "Health check imeshindwa baada ya sekunde 30; angalia logs kwa: pm2 logs $PROCESS_NAME --lines 80 --nostream"
   exit 1
 fi
 printf '%s\n' "Pairing page ya Termux itategemea port na tunnel/domain uliyoisanidi." 
