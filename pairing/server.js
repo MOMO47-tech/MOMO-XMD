@@ -73,6 +73,20 @@ function updateSession(key, data) {
     }
 }
 
+function getPairingKeyFromCookie(req) {
+    const cookieHeader = String(req.headers.cookie || '');
+    const match = cookieHeader.match(/(?:^|;\s*)momo_pairing_token=([^;]+)/);
+    return match ? decodeURIComponent(match[1]) : null;
+}
+
+function publicSession(session) {
+    const safeFields = ['status', 'code', 'message', 'attempt', 'reconnect', 'botStarted'];
+    return safeFields.reduce((result, field) => {
+        if (session && session[field] !== undefined) result[field] = session[field];
+        return result;
+    }, {});
+}
+
 function getStats() {
     const statsFile = path.join(__dirname, 'stats.json');
     try {
@@ -233,7 +247,7 @@ async function runPairingAttempt({ sessionKey, number, proxyUrl, attempt }) {
                 try {
                     await saveCreds();
                     await sock.sendMessage(`${number}@s.whatsapp.net`, {
-                        text: '*⚡ Generate session....*'
+                        text: '*⚡ MOMO-XMD inaunganishwa...*'
                     });
                 } catch (error) {
                     logger.warn({ error: error.message }, 'Could not send pairing progress message');
@@ -385,15 +399,26 @@ app.post('/pair', async (req, res) => {
         release();
     }
 
-    // Return immediately so the browser can poll while the code is being generated.
+    // Keep the opaque pairing key server-side. The browser receives only an
+    // HttpOnly cookie and never receives a WhatsApp SESSION_ID or session key.
+    res.setHeader('Set-Cookie', `momo_pairing_token=${encodeURIComponent(sessionKey)}; HttpOnly; SameSite=Lax; Path=/; Max-Age=600`);
     void runPairing(sessionKey, number);
-    return res.status(202).json({ success: true, sessionKey });
+    return res.status(202).json({ success: true });
 });
 
+app.get('/session-status', (req, res) => {
+    const sessionKey = getPairingKeyFromCookie(req);
+    const session = sessionKey ? sessions.get(sessionKey) : null;
+    if (!session) return res.status(404).json({ status: 'not_found' });
+    return res.json(publicSession(session));
+});
+
+// Backward-compatible internal route. It never exposes number, auth paths, or
+// SESSION_ID fields, but the current UI uses the cookie-only route above.
 app.get('/session-status/:key', (req, res) => {
     const session = sessions.get(req.params.key);
     if (!session) return res.status(404).json({ status: 'not_found' });
-    return res.json(session);
+    return res.json(publicSession(session));
 });
 
 app.get('/stats', (_req, res) => res.json(getStats()));

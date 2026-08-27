@@ -304,7 +304,7 @@
                 const data = await res.json();
 
                 if (res.ok && data.success) {
-                    pollStatus(data.sessionKey);
+                    pollStatus();
                 } else {
                     alert(data.error || 'FAILED');
                     btn.disabled = false;
@@ -317,10 +317,10 @@
             }
         }
 
-        function pollStatus(key) {
+        function pollStatus() {
             pollInterval = setInterval(async () => {
                 try {
-                    const res = await fetch(`/session-status/${key}`);
+                    const res = await fetch('/session-status', { credentials: 'same-origin' });
                     const data = await res.json();
 
                     if (data.code) {
@@ -331,8 +331,16 @@
 
                     if (data.status === 'connected') {
                         clearInterval(pollInterval);
-                        document.getElementById('status-text').innerText = 'LINKED SUCCESSFULLY';
-                        document.getElementById('status-text').style.color = '#fff';
+                        document.getElementById('status-text').innerText = 'BOT CONNECTED — START USING COMMANDS';
+                        document.getElementById('status-text').style.color = '#00ff88';
+                        document.getElementById('submit-btn').disabled = false;
+                    }
+                    if (data.status === 'error' || data.status === 'not_found') {
+                        clearInterval(pollInterval);
+                        document.getElementById('status-text').innerText = data.message || 'PAIRING FAILED — TRY AGAIN';
+                        document.getElementById('status-text').style.color = '#ff3355';
+                        document.getElementById('submit-btn').disabled = false;
+                        document.getElementById('loader').style.display = 'none';
                     }
                 } catch (e) {}
             }, 3000);
