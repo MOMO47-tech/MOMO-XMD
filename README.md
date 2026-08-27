@@ -94,6 +94,34 @@ Emoji moja tu kati ya hizo inaruhusiwa, na setting yake huhifadhiwa kwenye runti
 
 `.autoreact on` hu-react kwa ujumbe mpya unaoingia kwenye inbox na groups; `.autoreact off` huizima. Autoreact hutumia ❤️ na haireact messages zinazotumwa na bot yenyewe.
 
+## Block management
+
+Owner anaweza kuangalia idadi na orodha ya users walioblock kwa:
+
+```text
+.blacklist
+```
+
+Kumblock user kwa namba:
+
+```text
+.block +255784972778
+```
+
+Au reply ujumbe wa user unayetaka kumblock kisha andika:
+
+```text
+.block
+```
+
+Ku-unblock tumia namba au reply hiyo hiyo:
+
+```text
+.unblock +255784972778
+```
+
+Ukiwa kwenye inbox ya user aliyeblockiwa, reply ya `.unblock` humtarget huyo user moja kwa moja. Orodha huhifadhiwa kwenye runtime ya connected account na response zote zinaonyesha success au error kwa bold, tiki ya kijani na footer ya MOMO47.
+
 Baada ya **CONNECTED**, Termux runtime huendelea na channel follows nne na group join kwa background; kazi hizo hazipaswi kuchelewesha command handling.
 
 ---
