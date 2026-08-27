@@ -34,37 +34,19 @@
 
 <p align="center">
   <a href="https://momo-xmd-pairing-4086f8388df8.herokuapp.com/"><img src="https://img.shields.io/badge/SERVER%201-HEROKU-6f42c1?style=for-the-badge" alt="Server 1 Heroku Pairing"></a>
-  <a href="https://momo-xmd-pairing2.herokuapp.com/"><img src="https://img.shields.io/badge/SERVER%202-HEROKU%20PAIRING-7952B3?style=for-the-badge" alt="Server 2 Heroku Pairing"></a>
+  <a href="https://momo-xmd-pairing2-fd35d1ed19df.herokuapp.com/"><img src="https://img.shields.io/badge/SERVER%202-HEROKU%20PAIRING-7952B3?style=for-the-badge" alt="Server 2 Heroku Pairing"></a>
   <a href="https://momo-xmd-pairing.onrender.com/"><img src="https://img.shields.io/badge/SERVER%203-RENDER%20PAIRING-46e3b7?style=for-the-badge" alt="Server 3 Render Pairing"></a>
   <a href="https://momo-xmd-pairing.duckdns.org/"><img src="https://img.shields.io/badge/SERVER%204-DUCKDNS-00D4FF?style=for-the-badge" alt="Server 4 DuckDNS Pairing"></a>
 </p>
 
 ---
 
-## 🚀 DEPLOYMENT
-
-<p align="center">
-  <a href="https://heroku.com/deploy?template=https://github.com/MOMO47-tech/MOMO-XMD/tree/heroku-bot-deploy"><img src="https://img.shields.io/badge/DEPLOY%20TO-HEROKU-7952B3?style=for-the-badge&logo=heroku" alt="Deploy to Heroku"></a>
-  <a href="https://render.com/deploy?repo=https://github.com/MOMO47-tech/MOMO-XMD"><img src="https://img.shields.io/badge/DEPLOY%20TO-RENDER-46E3B7?style=for-the-badge&logo=render" alt="Deploy to Render"></a>
-</p>
-
 <p align="center">
   <a href="https://github.com/MOMO47-tech/MOMO-XMD/fork"><img src="https://img.shields.io/badge/FORK%20REPOSITORY-MOMO47--tech-181717?style=for-the-badge&logo=github" alt="Fork repository"></a>
   <a href="https://github.com/MOMO47-tech/MOMO-XMD/archive/refs/heads/main.zip"><img src="https://img.shields.io/badge/DOWNLOAD-ZIP-00D4FF?style=for-the-badge" alt="Download ZIP"></a>
 </p>
 
-### Heroku deployment
-
-1. Click **Deploy to Heroku**.
-2. Enter the Heroku app name and deploy the service.
-3. Open a pairing server, enter the WhatsApp number, and complete code or QR pairing.
-4. After pairing, the server shows the decorated **CONNECTED** message; no Session ID is displayed to the user.
-
-### Render deployment
-
-1. Click **Deploy to Render**.
-2. Select the repository and create the service.
-3. Add the Session ID as the `SESSION_ID` environment variable when requested.
+> Deployment is managed by the MOMO-XMD owner. Users should open a pairing link above; no Heroku or Render deployment action is required.
 
 ---
 
@@ -103,5 +85,3 @@
 
 References:
 - [MOMO-XMD repository](https://github.com/MOMO47-tech/MOMO-XMD)
-- [Heroku Button documentation](https://devcenter.heroku.com/articles/heroku-button)
-- [Render Blueprint documentation](https://render.com/docs/blueprint-spec)
