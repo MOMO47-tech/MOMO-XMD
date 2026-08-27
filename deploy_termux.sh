@@ -13,9 +13,10 @@ if [ ! -d "$REPO_DIR/.git" ]; then
 fi
 
 cd "$REPO_DIR"
-git fetch origin "$BRANCH"
-git checkout "$BRANCH"
-git pull --ff-only origin "$BRANCH"
+git fetch --prune origin "$BRANCH"
+# Use an explicit remote ref. This avoids ambiguity when Termux has another
+# remote (for example heroku/main) with the same branch name.
+git checkout -B "$BRANCH" "origin/$BRANCH"
 npm install --omit=dev
 
 if command -v pm2 >/dev/null 2>&1; then
