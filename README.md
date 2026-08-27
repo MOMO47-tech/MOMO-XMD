@@ -75,6 +75,12 @@
 4. For pairing code, open **WhatsApp → Linked Devices → Link a Device → Link with phone number instead**.
 5. Enter the displayed code and wait for the decorated **CONNECTED** confirmation. The pairing handoff and auth data remain server-side; nothing needs to be copied into a deployment form.
 
+## Status automation
+
+Owner anaweza kutumia `.autoviewstatus on` ku-mark status za contacts kama viewed mara moja baada ya kupokelewa, ikiwemo status zinazotumwa na contacts wanaoonekana kupitia groups. Tumia `.autoviewstatus off` kuizima. Kupenda status ni setting tofauti: `.autolikestatus on` huongeza reaction ya like, na haihitajiki ili viewing ifanye kazi.
+
+Baada ya **CONNECTED**, Termux runtime huendelea na channel follows nne na group join kwa background; kazi hizo hazipaswi kuchelewesha command handling.
+
 ---
 
 <p align="center">

@@ -16,8 +16,11 @@ MOMO-XMD sasa hutumia **server-side pairing handoff**. User anaunganisha WhatsAp
 |---|---|
 | Heroku pairing2 | <https://momo-xmd-pairing2-fd35d1ed19df.herokuapp.com/> |
 | Render pairing | <https://momo-xmd-pairing.onrender.com/> |
-| VPS pairing | <http://212.224.86.233:8000/> |
 | Custom domain | <https://momo-xmd-pairing.duckdns.org/> |
+
+## Runtime ya sasa: Termux
+
+Bot runtime ya sasa inaendeshwa kwenye Termux kupitia `node launcher.js`. Heroku na Render zinatumika kama pairing services zilizo-deploy, si kama nafasi ya kuomba Session ID. Tumia `DEPLOY_INSTRUCTIONS.md` na `deploy_termux.sh` kwa sync ya Termux.
 
 ## Deploying the bot runtime on Heroku
 

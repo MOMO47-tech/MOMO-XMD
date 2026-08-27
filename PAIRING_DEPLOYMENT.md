@@ -26,7 +26,6 @@ User anafungua pairing page, anaweka namba, anapokea code, na anaiingiza kwenye 
 | Heroku pairing1 | <https://momo-xmd-pairing-4086f8388df8.herokuapp.com/> |
 | Heroku pairing2 | <https://momo-xmd-pairing2-fd35d1ed19df.herokuapp.com/> |
 | Render | <https://momo-xmd-pairing.onrender.com/> |
-| VPS | <http://212.224.86.233:8000/> |
 
 ## Health checks
 
@@ -44,4 +43,4 @@ GET /stats
 
 ## Deployment note
 
-Tumia repository <https://github.com/MOMO47-tech/MOMO-XMD> na branch `main` au `heroku-bot-deploy`. Heroku, Render, VPS na Termux zinapaswa ku-run `node launcher.js`; usitumie `node main.js` kwa flow hii ya sasa. Usiongeze `SESSION_ID` kwenye environment variables ya pairing deployment.
+Tumia repository <https://github.com/MOMO47-tech/MOMO-XMD> na branch `main` au `heroku-bot-deploy`. Heroku, Render na Termux zinapaswa ku-run `node launcher.js`; usitumie `node main.js` kwa flow hii ya sasa. Usiongeze `SESSION_ID` kwenye environment variables ya pairing deployment.

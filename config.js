@@ -41,10 +41,8 @@ module.exports = {
     pairing: {
         server1: 'https://momo-xmd-pairing-4086f8388df8.herokuapp.com/',
         server2: 'https://momo-xmd-pairing2-fd35d1ed19df.herokuapp.com/',
-        vps: 'http://212.224.86.233:8000',
         render: 'https://momo-xmd-pairing.onrender.com/',
-        domain: 'https://momo-xmd-pairing.duckdns.org/',
-        port: 'http://212.224.86.233:8000'
+        domain: 'https://momo-xmd-pairing.duckdns.org/'
     },
 
     heroku: {
