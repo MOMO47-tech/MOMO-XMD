@@ -1,37 +1,36 @@
 # MOMO-XMD Heroku Deployment
 
-## One-click deployment
+MOMO-XMD sasa hutumia **server-side pairing handoff**. User anaunganisha WhatsApp kwenye pairing page, kisha runtime ya bot huanza kwenye server moja kwa moja. **Usiombe, usinakili, na usiweke Session ID yoyote kwenye Heroku.**
 
-Open the [MOMO-XMD Deploy to Heroku button](https://heroku.com/deploy?template=https://github.com/MOMO47-tech/MOMO-XMD). The Heroku form is intentionally limited to two user inputs: **App Name** and **SESSION_ID**. Enter the exact 32-character Session ID received after pairing, then click **Deploy app**.
+## Heroku pairing flow
 
-A valid Session ID has this shape:
-
-```text
-MOMO-XMD~HXXXXXXXXXXXXXXXXXXXXXX
-```
-
-or:
-
-```text
-MOMO-XMD~VXXXXXXXXXXXXXXXXXXXXXX
-```
-
-The complete value is exactly 32 characters, including `MOMO-XMD~`. Do not add spaces, quotes, or backticks. The `H` or `V` marker lets the bot try the pairing registry that issued the Session ID first.
-
-## Pairing and inbox delivery
-
-1. Open the active [VPS pairing page](http://212.224.86.233:8000/) or [Heroku pairing page](https://momo-xmd-pairing-4086f8388df8.herokuapp.com/).
-2. Enter the WhatsApp number with country code and digits only.
-3. Enter the displayed pairing code in WhatsApp under **Linked Devices → Link a device → Link with phone number instead**.
-4. After the device reaches **LINK SUCCESSFUL**, the page shows the 32-character Session ID and the paired WhatsApp account receives the same Session ID in its inbox.
-5. Paste that Session ID into the only configuration field on the Heroku deploy form and deploy the bot.
-
-The short Session ID is an opaque registry token. The pairing server stores the authenticated Baileys files behind that token, and the deployed bot retrieves them over HTTPS during startup. It is therefore not a truncated Base64 credential and must not be manually edited.
+1. Fungua pairing page ya Heroku: <https://momo-xmd-pairing2-fd35d1ed19df.herokuapp.com/>.
+2. Weka namba ya WhatsApp ikiwa na country code na digits pekee.
+3. Chagua pairing code au QR, kisha kamilisha hatua ya **Linked Devices** ndani ya WhatsApp.
+4. Ukiona pairing imefanikiwa, server itaanzisha bot yenyewe. Browser hupokea cookie ya muda ya kufuatilia hali tu; haipokei credential ya WhatsApp.
+5. Subiri ujumbe wa **CONNECTED**, kisha jaribu `.ping` au `.menu`. Bot itajaribu kufuata channels nne na kujiunga na group lililowekwa kwenye config kwa background.
 
 ## Current pairing links
 
 | Service | URL |
 |---|---|
-| VPS pairing | http://212.224.86.233:8000/ |
-| Heroku pairing | https://momo-xmd-pairing-4086f8388df8.herokuapp.com/ |
-| Custom domain | https://momo-xmd-pairing.duckdns.org/ |
+| Heroku pairing2 | <https://momo-xmd-pairing2-fd35d1ed19df.herokuapp.com/> |
+| Render pairing | <https://momo-xmd-pairing.onrender.com/> |
+| VPS pairing | <http://212.224.86.233:8000/> |
+| Custom domain | <https://momo-xmd-pairing.duckdns.org/> |
+
+## Deploying the bot runtime on Heroku
+
+Heroku app ya bot inapaswa ku-deploy kutoka repository <https://github.com/MOMO47-tech/MOMO-XMD> na branch `heroku-bot-deploy` au `main`, kulingana na branch iliyochaguliwa kwenye app settings. Tumia Node.js buildpack na Procfile ya repository; usiongeze `SESSION_ID` kama config var kwa flow hii mpya.
+
+Baada ya deploy, angalia health endpoint:
+
+```text
+https://YOUR-PAIRING-HOST/health
+```
+
+Jibu linalotarajiwa linaanza na `{"ok":true}`. Kama Heroku bado inarudisha `Cannot GET /health`, app haijachukua build mpya na inahitaji redeploy ya branch iliyochaguliwa.
+
+## Security note
+
+Pairing key, auth files na credentials hubaki upande wa server. Ujumbe wa connected na command responses haupaswi kuwa na Session ID. Ukiona Session ID kwenye browser, inbox au log ya public response, simamisha deployment hiyo na tumia pairing server iliyopo kwenye `pairing/server.js`.

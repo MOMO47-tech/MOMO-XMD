@@ -1,155 +1,97 @@
 # MOMO-XMD Deployment Instructions
 
-## 1. VPS Deployment (Port 8000)
+MOMO-XMD hutumia Node.js, `launcher.js`, pairing server ya Express, na **server-side handoff**. User anapair WhatsApp kwenye pairing page; bot huanza baada ya connection bila user kupewa Session ID.
 
-### Step 1: Install Node.js
-```bash
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt-get install -y nodejs
-node -v
-```
+## VPS pairing server
 
-### Step 2: Clone Repository
 ```bash
 cd /root
-git clone https://github.com/MOMO47-tech/MOMO-XMD.git
+ git clone https://github.com/MOMO47-tech/MOMO-XMD.git
 cd MOMO-XMD
-```
-
-### Step 3: Install Dependencies
-```bash
 npm install
+PORT=8000 NODE_ENV=production node launcher.js
 ```
 
-### Step 4: Run Bot
-```bash
-node main.js
-```
+Kwa service ya kudumu, tumia process manager:
 
-### Step 5: Run Pairing Server
-```bash
-cd /root/MOMO-XMD/pairing
-npm install
-node server.js
-```
-
-### Step 6: Keep Running with PM2
 ```bash
 npm install -g pm2
 cd /root/MOMO-XMD
-pm2 start main.js --name "MOMO-XMD"
-cd /root/MOMO-XMD/pairing
-pm2 start server.js --name "MOMO-PAIR"
+PORT=8000 NODE_ENV=production pm2 start launcher.js --name MOMO-XMD
 pm2 save
 pm2 startup
 ```
 
----
+Pairing page ya VPS ni <http://212.224.86.233:8000/>. Health check ni:
 
-## 2. Heroku Deployment
+```text
+http://212.224.86.233:8000/health
+```
 
-### Step 1: Pair First
-Visit: https://momo-xmd-pairing1.herokuapp.com
-Enter your number and get pairing code.
+## Heroku
 
-### Step 2: Deploy to Heroku
-1. Go to https://dashboard.heroku.com/new
-2. Connect your GitHub account
-3. Select MOMO-XMD repository
-4. Set Config Vars:
-   - SESSION_ID = (your pairing code)
-   - OWNER_NUMBER = 255760298574
-5. Click Deploy
+1. Unganisha app na repository <https://github.com/MOMO47-tech/MOMO-XMD>.
+2. Chagua branch `heroku-bot-deploy` au `main`.
+3. Tumia Node.js buildpack na Procfile iliyopo kwenye repository.
+4. Start command ni `node launcher.js` kupitia Procfile.
+5. Usiongeze `SESSION_ID`; pairing server na bot hutumia handoff ya server-side.
+6. Thibitisha `https://YOUR-HOST/health` inarudisha `{"ok":true}`.
 
-### Step 3: Or use One-Click Deploy
-Click the HEROKUHOSTING button in README.md
+Pairing2 ya Heroku: <https://momo-xmd-pairing2-fd35d1ed19df.herokuapp.com/>.
 
----
+## Render
 
-## 3. Render Deployment
+1. Tengeneza Web Service kutoka repository <https://github.com/MOMO47-tech/MOMO-XMD>.
+2. Tumia branch inayotaka ku-deploy, kwa kawaida `main`.
+3. Build command: `npm install`.
+4. Start command: `node launcher.js`.
+5. Usiongeze `SESSION_ID` au kuomba credential kwa user.
+6. Thibitisha endpoint ya health baada ya deploy.
 
-### Step 1: Pair First
-Visit: https://momo-xmd-pairing-render.onrender.com
+Render pairing page: <https://momo-xmd-pairing.onrender.com/>.
 
-### Step 2: Deploy to Render
-1. Go to render.com
-2. Create New Web Service
-3. Connect GitHub repo: MOMO47-tech/MOMO-XMD
-4. Set Environment Variables:
-   - SESSION_ID = (your pairing code)
-   - OWNER_NUMBER = 255760298574
-5. Build Command: npm install
-6. Start Command: node main.js
-7. Deploy
+## Pairing ya user
 
----
+1. Fungua moja ya pairing links zilizo kwenye README.
+2. Weka namba kwenye pairing page, au tumia QR.
+3. Kamilisha **WhatsApp → Linked Devices → Link a device**.
+4. Browser itaonyesha hali ya pairing kupitia cookie ya HttpOnly, si credential ya WhatsApp.
+5. Bot itaanza yenyewe, itatuma **CONNECTED**, kisha itajaribu kufuata channels nne na kujiunga na group iliyowekwa kwenye config.
 
-## 4. KataBAMP Deployment
+## KataBAMP/Termux
 
-### Step 1: Clone Repository
 ```bash
+pkg update -y
+pkg install nodejs git -y
 cd /data/data/com.termux/files/home
 git clone https://github.com/MOMO47-tech/MOMO-XMD.git
 cd MOMO-XMD
-```
-
-### Step 2: Install Dependencies
-```bash
-pkg install nodejs
 npm install
+NODE_ENV=production PORT=8000 node launcher.js
 ```
 
-### Step 3: Run Bot
-```bash
-node main.js
-```
-
----
-
-## 5. Cleaning Old Files on VPS
-
-```bash
-# Remove old bot files
-rm -rf /root/old-bot-folder
-
-# Remove old PM2 processes
-pm2 delete all
-
-# Clone fresh repo
-cd /root
-git clone https://github.com/MOMO47-tech/MOMO-XMD.git
-cd MOMO-XMD
-npm install
-pm2 start main.js --name "MOMO-XMD"
-pm2 save
-```
-
----
-
-## 6. Push to GitHub from VPS
+## Kusync code mpya
 
 ```bash
 cd /root/MOMO-XMD
-git init
-git add .
-git commit -m "MOMO-XMD v1.9.9"
-git remote add origin https://github.com/MOMO47-tech/MOMO-XMD.git
-git push -u origin main
+git fetch origin
+git checkout main
+git pull --ff-only origin main
+npm install
+pm2 restart MOMO-XMD --update-env
 ```
 
-If you already have the repo:
-```bash
-cd /root/MOMO-XMD
-git pull origin main
-```
+## Troubleshooting
 
----
+| Tatizo | Hatua |
+|---|---|
+| Pairing code haionekani | Hakikisha pairing page ina HTTP 200 na jaribu baada ya sekunde chache. |
+| `Cannot GET /health` | Deployment ina build ya zamani; redeploy branch mpya ya repository. |
+| `CONNECTED` haifiki | Kagua logs za runtime na connection status; optional channel/group tasks hazipaswi kuzuia notification. |
+| Bot haijibu command | Thibitisha kuwa socket imefika `open`, kisha jaribu `.ping`; commands za owner zinahitaji owner account. |
+| Channel/group haijaunganishwa | Kagua permissions za account na logs za post-connect automation. |
+| Session imepotea | Pair tena kupitia pairing page; usitafute au kuomba credential ya Session ID. |
 
-## IMPORTANT NOTES
+## Muhimu
 
-- Session ID starts with "MOMO-XMD" after pairing
-- Prefix is always (.) dot - cannot be changed
-- Owner commands only work for 255760298574
-- Group admin commands work for group admins only
-- Bot name is always "MOMO XMD"
-- Owner name is always "MOMO47"
+Prefix ya bot ni `.` na jina la bot ni **MOMO-XMD**. Owner ni **MOMO47**. Commands za owner zinabaki owner-only; commands za group zinahitaji group admin. Pairing keys na auth files zinapaswa kubaki upande wa server na hazipaswi kutumwa kwenye browser, inbox, README au logs za public response.

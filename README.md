@@ -17,7 +17,7 @@
 
 ## 🌑 WELCOME TO THE DARK SIDE
 
-**MOMO-XMD** is a Blue Dark Web WhatsApp bot with a scary neon pairing interface, blue skull branding, background music, lightning effects, compact Session IDs, and public menu access.
+**MOMO-XMD** is a Blue Dark Web WhatsApp bot with a scary neon pairing interface, blue skull branding, background music, lightning effects, server-side pairing handoff, and public menu access.
 
 ## ⚡ FEATURES
 
@@ -27,6 +27,7 @@
 - **Server-side session handoff** after pairing; users do not receive a Session ID.
 - **Background music, animated text, lightning effects, and a truthful counter of completed pairings.**
 - **Public `.menu` command** that responds to normal users as well as the owner.
+- **View-once controls:** owner can enable `.autoviewonce on` for automatic reveal, use `.vv` on a quoted view-once image to resend it in the current chat, or use `.vv2` to send it to the connected account inbox.
 
 ---
 
@@ -72,7 +73,7 @@
 2. Enter your WhatsApp number with the country code.
 3. Choose pairing code or QR pairing.
 4. For pairing code, open **WhatsApp → Linked Devices → Link a Device → Link with phone number instead**.
-5. Enter the displayed code and wait for the decorated **CONNECTED** confirmation. The Session ID remains stored server-side.
+5. Enter the displayed code and wait for the decorated **CONNECTED** confirmation. The pairing handoff and auth data remain server-side; nothing needs to be copied into a deployment form.
 
 ---
 
