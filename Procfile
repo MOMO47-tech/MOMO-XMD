@@ -1,1 +1,1 @@
-web: node vps-bot-entry.js
+web: node launcher.js

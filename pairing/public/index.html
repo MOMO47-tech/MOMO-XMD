@@ -271,12 +271,9 @@
                     body: JSON.stringify({ number: num })
                 });
                 const data = await res.json();
-                if (data.code || data.sessionKey) {
-                    if (data.code) document.getElementById('pairing-code').innerText = data.code;
-                    document.getElementById('pairing-display').style.display = 'block';
-                    document.getElementById('qr-display').style.display = 'none';
-                    document.getElementById('result').style.display = 'block';
-                    if (data.sessionKey) startPolling(data.sessionKey);
+
+                if (res.ok && data.success) {
+                    pollStatus();
                 } else {
                     showNotification(data.error || 'LINK FAILED');
                 }
@@ -354,11 +351,10 @@
             }
         }
 
-        function startPolling(key) {
-            stopPolling();
+        function pollStatus() {
             pollInterval = setInterval(async () => {
                 try {
-                    const res = await fetch(`/session-status/${key}`);
+                    const res = await fetch('/session-status', { credentials: 'same-origin' });
                     const data = await res.json();
                     const msgEl = document.getElementById('status-text');
                     const dotEl = document.getElementById('status-dot');
@@ -367,20 +363,21 @@
                         document.getElementById('pairing-code').innerText = data.code;
                         document.getElementById('pairing-display').style.display = 'block';
                         document.getElementById('result').style.display = 'block';
-                        msgEl.innerText = 'PAIRING CODE READY';
-                        dotEl.className = 'status-dot active';
-                        stopPolling();
-                    } else if (data.status === 'open' || data.status === 'connected') {
-                        msgEl.innerHTML = '<span style="color:#fff; text-shadow: 0 0 10px #00ff00;">LINK SUCCESSFUL! SESSION SENT.</span>';
-                        dotEl.className = 'status-dot active';
-                        stopPolling();
-                    } else if (data.status === 'closed' || data.status === 'close') {
-                        msgEl.innerHTML = '<span style="color:#ff0000">CONNECTION CLOSED. RETRY.</span>';
-                        dotEl.className = 'status-dot error';
-                        stopPolling();
-                    } else {
-                        msgEl.innerText = 'STATUS: ' + data.status.toUpperCase() + '...';
-                        dotEl.className = 'status-dot';
+                        document.getElementById('code-display').innerText = data.code;
+                    }
+
+                    if (data.status === 'connected') {
+                        clearInterval(pollInterval);
+                        document.getElementById('status-text').innerText = 'BOT CONNECTED — START USING COMMANDS';
+                        document.getElementById('status-text').style.color = '#00ff88';
+                        document.getElementById('submit-btn').disabled = false;
+                    }
+                    if (data.status === 'error' || data.status === 'not_found') {
+                        clearInterval(pollInterval);
+                        document.getElementById('status-text').innerText = data.message || 'PAIRING FAILED — TRY AGAIN';
+                        document.getElementById('status-text').style.color = '#ff3355';
+                        document.getElementById('submit-btn').disabled = false;
+                        document.getElementById('loader').style.display = 'none';
                     }
                 } catch (e) {}
             }, 3000);
