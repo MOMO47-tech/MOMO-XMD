@@ -20,17 +20,27 @@ git checkout -B "$BRANCH" "origin/$BRANCH"
 npm install --omit=dev
 
 if command -v pm2 >/dev/null 2>&1; then
+  # Recreate the process with an absolute script path and explicit cwd. This
+  # prevents PM2 from reusing a stale path/cwd from an earlier deployment.
   if pm2 describe "$PROCESS_NAME" >/dev/null 2>&1; then
-    PORT="$PORT_NUMBER" NODE_ENV=production pm2 restart "$PROCESS_NAME" --update-env
-  else
-    PORT="$PORT_NUMBER" NODE_ENV=production pm2 start launcher.js --name "$PROCESS_NAME"
+    pm2 delete "$PROCESS_NAME" >/dev/null
   fi
+  PORT="$PORT_NUMBER" NODE_ENV=production pm2 start "$REPO_DIR/launcher.js" \
+    --name "$PROCESS_NAME" --cwd "$REPO_DIR" --update-env
   pm2 save
   echo "MOMO-XMD imeanzishwa kupitia PM2 kwenye Termux."
 else
   echo "PM2 haipo; code imesync. Anzisha sasa:"
-  echo "PORT=$PORT_NUMBER NODE_ENV=production node launcher.js"
+  echo "cd \"$REPO_DIR\" && PORT=$PORT_NUMBER NODE_ENV=production node launcher.js"
 fi
 
-printf '%s\n' "Health check baada ya kuanza: http://127.0.0.1:${PORT_NUMBER}/health"
+HEALTH_URL="http://127.0.0.1:${PORT_NUMBER}/health"
+printf '%s\n' "Health check baada ya kuanza: $HEALTH_URL"
+sleep 3
+if curl -fsS --max-time 10 "$HEALTH_URL"; then
+  printf '\n%s\n' "MOMO-XMD health iko sawa."
+else
+  printf '\n%s\n' "Health check imeshindwa; angalia logs kwa: pm2 logs $PROCESS_NAME --lines 80 --nostream"
+  exit 1
+fi
 printf '%s\n' "Pairing page ya Termux itategemea port na tunnel/domain uliyoisanidi." 
