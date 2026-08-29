@@ -17,6 +17,11 @@ const hasAuthState = (directory) => {
 const findPersistedAuthDir = () => {
     const candidates = [path.join(__dirname, 'session')];
     try {
+        for (const name of fs.readdirSync(__dirname)) {
+            if (name.startsWith('auth_')) candidates.push(path.join(__dirname, name));
+        }
+    } catch (_) {}
+    try {
         for (const name of fs.readdirSync(path.join(__dirname, 'pairing'))) {
             if (name.startsWith('temp_')) candidates.push(path.join(__dirname, 'pairing', name));
         }
