@@ -20,15 +20,16 @@ git checkout -B "$BRANCH" "origin/$BRANCH"
 npm install --omit=dev
 
 if command -v pm2 >/dev/null 2>&1; then
-  # Recreate the process with an absolute script path and explicit cwd. This
-  # prevents PM2 from reusing a stale path/cwd from an earlier deployment.
+  # Reload an existing process instead of deleting it first. PM2 keeps the
+  # process supervised and minimizes downtime while the updated code loads.
   if pm2 describe "$PROCESS_NAME" >/dev/null 2>&1; then
-    pm2 delete "$PROCESS_NAME" >/dev/null
+    PORT="$PORT_NUMBER" NODE_ENV=production pm2 reload "$PROCESS_NAME" --update-env
+  else
+    PORT="$PORT_NUMBER" NODE_ENV=production pm2 start "$REPO_DIR/launcher.js" \
+      --name "$PROCESS_NAME" --cwd "$REPO_DIR" --update-env
   fi
-  PORT="$PORT_NUMBER" NODE_ENV=production pm2 start "$REPO_DIR/launcher.js" \
-    --name "$PROCESS_NAME" --cwd "$REPO_DIR" --update-env
   pm2 save
-  echo "MOMO-XMD imeanzishwa kupitia PM2 kwenye Termux."
+  echo "MOMO-XMD ime-update na ku-reload kupitia PM2 kwenye Termux."
 else
   echo "PM2 haipo; code imesync. Anzisha sasa:"
   echo "cd \"$REPO_DIR\" && PORT=$PORT_NUMBER NODE_ENV=production node launcher.js"
