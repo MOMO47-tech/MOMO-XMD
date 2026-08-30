@@ -149,6 +149,13 @@
         .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; background: #555; }
         .status-dot.active { background: #00ff00; box-shadow: 0 0 5px #00ff00; }
         .status-dot.error { background: #ff0000; box-shadow: 0 0 5px #ff0000; }
+        .users-card {
+            margin-top: 24px; padding: 18px; border: 1px solid var(--primary);
+            border-radius: 10px; background: rgba(0, 212, 255, 0.08);
+            box-shadow: 0 0 12px rgba(0, 212, 255, 0.25); text-align: center;
+        }
+        .users-label { font-size: 0.75rem; letter-spacing: 2px; color: #88ccff; }
+        .users-count { display: block; margin-top: 8px; font-size: 2rem; font-weight: bold; color: white; text-shadow: var(--text-glow); }
     </style>
 </head>
 <body>
@@ -224,6 +231,11 @@
             </div>
         </div>
 
+        <div class="users-card" aria-live="polite">
+            <span class="users-label">CONNECTED USERS</span>
+            <strong class="users-count" id="users-count">0</strong>
+        </div>
+
         <div class="footer">
             DESIGNED BY <span class="owner">MOMO47</span> &copy; 2026<br>
             STAY ANONYMOUS. STAY SECURE.
@@ -233,6 +245,21 @@
     <script>
         let mode = 'pairing';
         let pollInterval = null;
+
+        async function loadUsersCount() {
+            try {
+                const res = await fetch('/public-stats', { credentials: 'same-origin' });
+                if (!res.ok) return;
+                const data = await res.json();
+                const count = Number(data.users);
+                if (Number.isFinite(count) && count >= 0) {
+                    document.getElementById('users-count').innerText = String(Math.floor(count));
+                }
+            } catch (_) {}
+        }
+
+        loadUsersCount();
+        setInterval(loadUsersCount, 15000);
 
         setInterval(() => {
             if (Math.random() > 0.95) {

@@ -427,6 +427,13 @@ app.get('/session-status/:key', (req, res) => {
 
 app.get('/stats', (_req, res) => res.json(getStats()));
 
+// Public-safe counter: expose only aggregate user count, never phone numbers,
+// pairing keys, auth paths, or session details.
+app.get('/public-stats', (_req, res) => {
+    const stats = getStats();
+    return res.json({ users: Number(stats.total_pairings || 0) });
+});
+
 if (require.main === module) {
     app.listen(PORT, '0.0.0.0', () => {
         logger.info({ port: PORT }, 'MOMO-XMD pairing server started');
