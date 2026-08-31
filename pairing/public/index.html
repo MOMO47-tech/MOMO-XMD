@@ -394,6 +394,18 @@
                         if (codeDisplay) codeDisplay.innerText = data.code;
                     }
 
+                    if (['awaiting_link', 'paired', 'bot_starting', 'reconnecting'].includes(data.status)) {
+                        const statusLabels = {
+                            awaiting_link: 'PAIRING CODE READY — ENTER IT ON WHATSAPP',
+                            paired: 'WHATSAPP LINKED — STARTING BOT',
+                            bot_starting: 'BOT STARTING — PLEASE WAIT',
+                            reconnecting: 'RECONNECTING TO WHATSAPP — PLEASE WAIT'
+                        };
+                        msgEl.innerText = statusLabels[data.status] || data.status.toUpperCase();
+                        msgEl.style.color = '#ffd166';
+                        dotEl.style.background = '#ffd166';
+                    }
+
                     if (data.status === 'connected') {
                         clearInterval(pollInterval);
                         document.getElementById('status-text').innerText = 'BOT CONNECTED — START USING COMMANDS';
