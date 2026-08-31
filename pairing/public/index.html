@@ -361,9 +361,28 @@
         }
 
         let audioPlaying = false;
+        let audioGestureBound = true;
+        const bgAudio = document.getElementById('bg-audio');
+        const audioButton = document.getElementById('audio-btn');
+
+        function startAudioAfterTouch() {
+            if (!audioGestureBound || audioPlaying) return;
+            audioGestureBound = false;
+            bgAudio.play().then(() => {
+                audioPlaying = true;
+                audioGestureBound = false;
+                document.removeEventListener('pointerdown', startAudioAfterTouch);
+                if (audioButton) audioButton.innerText = '🎵 BGM: ON';
+            }).catch(() => {
+                audioGestureBound = true;
+            });
+        }
+
+        document.addEventListener('pointerdown', startAudioAfterTouch, { passive: true });
+
         function toggleAudio() {
-            const audio = document.getElementById('bg-audio');
-            const btn = document.getElementById('audio-btn');
+            const audio = bgAudio;
+            const btn = audioButton;
             if (audioPlaying) {
                 audio.pause();
                 audioPlaying = false;
