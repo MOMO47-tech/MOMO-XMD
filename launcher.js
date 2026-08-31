@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const { startBot } = require('./lib/bot');
 const config = require('./lib/config');
+const { configured: supabaseConfigured, listSessions, restoreSession } = require('./lib/session-store');
 
 const app = express();
 
@@ -41,7 +42,7 @@ app.use(express.static(path.join(__dirname, 'pairing/public')));
 // Pairing API routes
 const pairingServer = require('./pairing/server');
 if (typeof pairingServer.setPairedBotStarter === 'function') {
-    pairingServer.setPairedBotStarter((authDir) => startBot({ authDir, sessionId: null }));
+    pairingServer.setPairedBotStarter((authDir, persistentKey) => startBot({ authDir, sessionId: null, sessionKey: persistentKey }));
 }
 app.use('/', pairingServer);
 
@@ -57,6 +58,20 @@ app.listen(port, '0.0.0.0', () => {
         console.log(`[LAUNCHER] Restoring paired auth from ${persistedAuthDir}`);
         startBot({ authDir: persistedAuthDir, sessionId: null })
             .catch(err => console.error('[BOT START ERROR]:', err));
+    } else if (supabaseConfigured()) {
+        listSessions().then(async (keys) => {
+            if (!keys.length) {
+                console.log('[LAUNCHER] Supabase has no paired auth. Use the web interface to pair.');
+                return;
+            }
+            // One socket is started per deployment. Keep the newest persisted
+            // account active; additional accounts remain safely stored.
+            const sessionKey = process.env.SUPABASE_SESSION_KEY || keys[0];
+            const authDir = path.join(__dirname, 'session');
+            await restoreSession(sessionKey, authDir);
+            console.log(`[LAUNCHER] Restoring paired auth from Supabase (${sessionKey.slice(0, 18)}...)`);
+            await startBot({ authDir, sessionId: null, sessionKey });
+        }).catch(err => console.error('[BOT START ERROR]:', err));
     } else {
         console.log('[LAUNCHER] No paired auth found. Use the web interface to pair; bot will start automatically after linking.');
     }

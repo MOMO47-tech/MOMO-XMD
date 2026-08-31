@@ -14,6 +14,7 @@ const { HttpProxyAgent } = require('http-proxy-agent');
 const { HttpsProxyAgent } = require('https-proxy-agent');
 const { SocksProxyAgent } = require('socks-proxy-agent');
 const { Mutex } = require('async-mutex');
+const { configured: supabaseConfigured, saveSession, restoreSession } = require('../lib/session-store');
 
 const app = express();
 app.use(express.json({ limit: '1mb' }));
@@ -128,7 +129,18 @@ function getBotStarter() {
     }
 }
 
-async function startBotFromAuth(sessionKey, authDir) {
+async function startBotFromAuth(sessionKey, authDir, persistentKey) {
+    if (supabaseConfigured() && persistentKey) {
+        try {
+            await saveSession(persistentKey, authDir);
+            logger.info({ persistentKey: persistentKey.slice(0, 18) }, 'Persisted paired auth to Supabase');
+        } catch (error) {
+            logger.error({ error: error.message }, 'Could not persist paired auth to Supabase');
+            updateSession(sessionKey, { status: 'error', message: 'Pairing succeeded but auth could not be persisted.' });
+            removeAuthDir(authDir);
+            return;
+        }
+    }
     const starter = getBotStarter();
     if (!starter) {
         updateSession(sessionKey, {
@@ -140,7 +152,7 @@ async function startBotFromAuth(sessionKey, authDir) {
     }
 
     try {
-        await starter(authDir);
+        await starter(authDir, persistentKey);
         updateSession(sessionKey, { status: 'connected', botStarted: true });
     } catch (error) {
         logger.error({ error: error.message }, 'Server-side bot startup failed');
@@ -266,7 +278,7 @@ async function runPairingAttempt({ sessionKey, number, proxyUrl, attempt }) {
                 closeSocket(sock);
 
                 // Keep the auth directory: the bot uses it for the server-side handoff.
-                void startBotFromAuth(sessionKey, authDir);
+                void startBotFromAuth(sessionKey, authDir, `wa_${number}`);
                 finish({ success: true, authDir });
                 return;
             }
@@ -295,7 +307,7 @@ async function runPairingAttempt({ sessionKey, number, proxyUrl, attempt }) {
                         message: `Linked auth detected after WhatsApp close (${code || 'unknown'}); starting bot`
                     });
                     closeSocket(sock);
-                    void startBotFromAuth(sessionKey, authDir);
+                    void startBotFromAuth(sessionKey, authDir, `wa_${number}`);
                     finish({ success: true, authDir });
                     return;
                 }
