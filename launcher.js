@@ -46,6 +46,13 @@ if (typeof pairingServer.setPairedBotStarter === 'function') {
 }
 app.use('/', pairingServer);
 
+const startBotWithRetry = (options, label) => {
+    startBot(options).catch(error => {
+        console.error(`[BOT START ERROR]${label ? ` ${label}` : ''}:`, error);
+        setTimeout(() => startBotWithRetry(options, label), 15000).unref?.();
+    });
+};
+
 app.listen(port, '0.0.0.0', () => {
     console.log(`[MOMO-XMD Universal Launcher] Running on port ${port}`);
     
@@ -53,11 +60,10 @@ app.listen(port, '0.0.0.0', () => {
     const persistedAuthDir = findPersistedAuthDir();
     if (sessionId) {
         console.log('[LAUNCHER] Starting bot with existing session...');
-        startBot().catch(err => console.error('[BOT START ERROR]:', err));
+        startBotWithRetry({}, 'existing session');
     } else if (persistedAuthDir) {
         console.log(`[LAUNCHER] Restoring paired auth from ${persistedAuthDir}`);
-        startBot({ authDir: persistedAuthDir, sessionId: null })
-            .catch(err => console.error('[BOT START ERROR]:', err));
+        startBotWithRetry({ authDir: persistedAuthDir, sessionId: null }, 'local paired auth');
     } else if (supabaseConfigured()) {
         listSessions().then(async (keys) => {
             if (!keys.length) {
@@ -70,7 +76,7 @@ app.listen(port, '0.0.0.0', () => {
             const authDir = path.join(__dirname, 'session');
             await restoreSession(sessionKey, authDir);
             console.log(`[LAUNCHER] Restoring paired auth from Supabase (${sessionKey.slice(0, 18)}...)`);
-            await startBot({ authDir, sessionId: null, sessionKey });
+            startBotWithRetry({ authDir, sessionId: null, sessionKey }, 'Supabase session');
         }).catch(err => console.error('[BOT START ERROR]:', err));
     } else {
         console.log('[LAUNCHER] No paired auth found. Use the web interface to pair; bot will start automatically after linking.');
