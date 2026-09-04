@@ -404,6 +404,12 @@ async function runPairing(sessionKey, number) {
     updateSession(sessionKey, { status: 'error', message: lastError.message });
 }
 
+// Allow users to open the pairing URL directly in a browser. The actual
+// pairing request remains POST-only and is called by the page JavaScript.
+app.get('/pair', (_req, res) => {
+    return res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 app.post('/pair', async (req, res) => {
     const number = normalizeNumber(req.body?.number);
     if (number.length < 8 || number.length > 15) {
