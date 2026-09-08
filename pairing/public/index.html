@@ -404,7 +404,12 @@
         function pollStatus() {
             pollInterval = setInterval(async () => {
                 try {
-                    const res = await fetch('/session-status', { credentials: 'same-origin' });
+                    const res = await fetch(`/session-status?ts=${Date.now()}`, {
+                        credentials: 'same-origin',
+                        cache: 'no-store',
+                        headers: { 'Cache-Control': 'no-cache' }
+                    });
+                    if (!res.ok) throw new Error(`Pairing status HTTP ${res.status}`);
                     const data = await res.json();
                     const msgEl = document.getElementById('status-text');
                     const dotEl = document.getElementById('status-dot');
@@ -446,8 +451,22 @@
                         document.getElementById('btn-qr').disabled = false;
                         document.getElementById('loader').style.display = 'none';
                     }
-                } catch (e) {}
+                } catch (e) {
+                    const msgEl = document.getElementById('status-text');
+                    if (msgEl && e?.message) {
+                        msgEl.innerText = 'WAITING FOR PAIRING SERVICE...';
+                        msgEl.style.color = '#ffd166';
+                    }
+                }
             }, 3000);
+            // Get the first state immediately instead of waiting for the first
+            // three-second interval, which is noticeable on Heroku dynos.
+            void (async () => {
+                try {
+                    const res = await fetch(`/session-status?ts=${Date.now()}`, { credentials: 'same-origin', cache: 'no-store' });
+                    if (!res.ok) return;
+                } catch (_) {}
+            })();
         }
 
         function stopPolling() { if (pollInterval) clearInterval(pollInterval); pollInterval = null; }

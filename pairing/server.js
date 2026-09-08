@@ -308,7 +308,11 @@ async function runPairingAttempt({ sessionKey, number, proxyUrl, attempt }) {
 
                 incrementStats();
                 updateSession(sessionKey, {
-                    status: 'bot_starting',
+                    // The WhatsApp link is already complete. Do not keep the
+                    // browser spinner waiting for Supabase or the long-lived
+                    // bot socket; both continue in the background.
+                    status: 'connected',
+                    botStarted: false,
                     code: undefined,
                     sessionId: undefined
                 });
@@ -337,7 +341,8 @@ async function runPairingAttempt({ sessionKey, number, proxyUrl, attempt }) {
                     }
                     incrementStats();
                     updateSession(sessionKey, {
-                        status: 'bot_starting',
+                        status: 'connected',
+                        botStarted: false,
                         attempt,
                         code: undefined,
                         sessionId: undefined,
