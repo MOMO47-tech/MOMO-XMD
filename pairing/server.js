@@ -226,37 +226,54 @@ async function runPairingAttempt({ sessionKey, number, proxyUrl, attempt }) {
         const requestCode = async () => {
             if (settled || pairingOpened || codeRequested || !sock) return;
             codeRequested = true;
-            try {
-                await delay(1200);
-                const code = await sock.requestPairingCode(number);
-                if (!code) throw new Error('WhatsApp returned an empty pairing code');
-                updateSession(sessionKey, {
-                    status: 'awaiting_link',
-                    code,
-                    attempt,
-                    proxy: proxyUrl ? 'enabled' : 'direct'
-                });
-                logger.info({ sessionKey, attempt }, 'Pairing code generated');
-            } catch (error) {
-                codeRequested = false;
-                updateSession(sessionKey, {
-                    status: 'code_error',
-                    message: error.message,
-                    attempt
-                });
-                if (reconnectCount < 2 && !settled && !pairingOpened) {
-                    reconnectCount += 1;
+            let lastError;
+            for (let codeAttempt = 1; codeAttempt <= 3; codeAttempt += 1) {
+                if (settled || pairingOpened || !sock) return;
+                try {
+                    // Heroku dynos can finish the initial WebSocket handshake
+                    // later than Render. Retrying on the same socket prevents
+                    // the visible pairing code from rotating unnecessarily.
+                    await delay(2500 * codeAttempt);
+                    const code = await sock.requestPairingCode(number);
+                    if (!code) throw new Error('WhatsApp returned an empty pairing code');
                     updateSession(sessionKey, {
-                        status: 'reconnecting',
-                        reconnect: reconnectCount,
-                        message: `Retrying pairing connection (${reconnectCount}/2)`
+                        status: 'awaiting_link',
+                        code,
+                        attempt,
+                        proxy: proxyUrl ? 'enabled' : 'direct'
                     });
-                    closeSocket(sock);
-                    await delay(1000 * reconnectCount);
-                    if (!settled && !pairingOpened) createSocket();
-                } else {
-                    fail(error);
+                    logger.info({ sessionKey, attempt, codeAttempt }, 'Pairing code generated');
+                    return;
+                } catch (error) {
+                    lastError = error;
+                    if (codeAttempt < 3) {
+                        updateSession(sessionKey, {
+                            status: 'connecting',
+                            attempt,
+                            message: `Preparing WhatsApp connection (${codeAttempt}/3)`
+                        });
+                        await delay(1500 * codeAttempt);
+                    }
                 }
+            }
+            codeRequested = false;
+            updateSession(sessionKey, {
+                status: 'code_error',
+                message: lastError?.message || 'Could not generate pairing code',
+                attempt
+            });
+            if (reconnectCount < 2 && !settled && !pairingOpened) {
+                reconnectCount += 1;
+                updateSession(sessionKey, {
+                    status: 'reconnecting',
+                    reconnect: reconnectCount,
+                    message: `Retrying pairing connection (${reconnectCount}/2)`
+                });
+                closeSocket(sock);
+                await delay(2000 * reconnectCount);
+                if (!settled && !pairingOpened) createSocket();
+            } else {
+                fail(lastError || new Error('Could not generate pairing code'));
             }
         };
 
@@ -361,8 +378,8 @@ async function runPairingAttempt({ sessionKey, number, proxyUrl, attempt }) {
                     agent: getProxyAgent(proxyUrl),
                     printQRInTerminal: false,
                     logger: pino({ level: 'silent' }),
-                    connectTimeoutMs: 60_000,
-                    defaultQueryTimeoutMs: 60_000,
+                    connectTimeoutMs: 90_000,
+                    defaultQueryTimeoutMs: 90_000,
                     markOnlineOnConnect: true
                 });
                 sock.ev.on('creds.update', saveCreds);
@@ -374,8 +391,8 @@ async function runPairingAttempt({ sessionKey, number, proxyUrl, attempt }) {
         }
 
         timeoutHandle = setTimeout(() => {
-            fail(new Error('Pairing request timed out after 120 seconds'));
-        }, 120_000);
+            fail(new Error('Pairing request timed out after 180 seconds'));
+        }, 180_000);
 
         createSocket();
     });
