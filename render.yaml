@@ -22,3 +22,9 @@ services:
         sync: false
       - key: SUPABASE_SESSION_KEY
         sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_API_BASE
+        value: https://api.openai.com/v1
+      - key: CHATBOT_MODEL
+        value: gpt-4o-mini
