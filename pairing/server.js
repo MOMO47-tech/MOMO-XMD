@@ -122,7 +122,7 @@ function getBotStarter() {
     if (startPairedBot) return startPairedBot;
     try {
         const { startBot } = require('../lib/bot');
-        return (authDir) => startBot({ authDir, sessionId: null });
+        return (authDir, sessionKey) => startBot({ authDir, sessionId: null, sessionKey });
     } catch (error) {
         logger.error({ error: error.message }, 'No bot starter is available for server-side handoff');
         return null;
