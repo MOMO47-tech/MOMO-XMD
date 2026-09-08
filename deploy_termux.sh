@@ -17,6 +17,8 @@ git fetch --prune origin "$BRANCH"
 # Use an explicit remote ref. This avoids ambiguity when Termux has another
 # remote (for example heroku/main) with the same branch name.
 git checkout -B "$BRANCH" "origin/$BRANCH"
+# ffmpeg-static is intentionally Render-only; remove any stale failed Android install.
+rm -rf node_modules/ffmpeg-static
 npm install --omit=dev
 
 if command -v pm2 >/dev/null 2>&1; then
