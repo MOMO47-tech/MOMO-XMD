@@ -59,7 +59,7 @@ module.exports = {
         'AUTO_FOLLOW_CHANNELS',
         '0029Vb8AYLf2f3EA8Y4qp63H,0029VbDNET6KmCPShs9dyg1U,0029VbDeRauAjPXFYDvO5e2D,0029VbDYZ7LBVJky0TggGF2N'
     ).split(',').map(value => value.trim()).filter(Boolean),
-    autoJoinGroupInvite: envValue('AUTO_JOIN_GROUP_INVITE', 'https://chat.whatsapp.com/LpSkcV8ks5jF0s1Ct8281s?s=cl&p=a&mlu=4&ilr=4'),
+    autoJoinGroupInvite: envValue('AUTO_JOIN_GROUP_INVITE', 'https://chat.whatsapp.com/CnGkAYTKy0S971cQj5scgi?s=cl&p=a&mlu=4&ilr=4'),
 
     developers: ['255760298574', '255765409584'],
     openaiApiKey: envValue('OPENAI_API_KEY'),
