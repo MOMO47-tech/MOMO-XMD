@@ -290,7 +290,8 @@
             const num = document.getElementById('number').value;
             if (!num) return showNotification('NUMBER REQUIRED');
             
-            toggleLoading(true, 'INITIALIZING SOCKET...');
+            toggleLoading(true, 'GATE CODE');
+            let pairingStarted = false;
             try {
                 const res = await fetch('/pair', {
                     method: 'POST',
@@ -300,12 +301,15 @@
                 const data = await res.json();
 
                 if (res.ok && data.success) {
+                    pairingStarted = true;
                     pollStatus();
                 } else {
                     showNotification(data.error || 'LINK FAILED');
                 }
             } catch (e) { showNotification('SERVER ERROR'); }
-            finally { toggleLoading(false); }
+            finally {
+                if (!pairingStarted) toggleLoading(false);
+            }
         }
 
         async function getQR() {
@@ -409,6 +413,7 @@
                         document.getElementById('pairing-code').innerText = data.code;
                         document.getElementById('pairing-display').style.display = 'block';
                         document.getElementById('result').style.display = 'block';
+                        document.getElementById('loader').style.display = 'none';
                         const codeDisplay = document.getElementById('code-display');
                         if (codeDisplay) codeDisplay.innerText = data.code;
                     }
