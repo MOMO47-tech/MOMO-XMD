@@ -5,6 +5,13 @@ const { startBot } = require('./lib/bot');
 const config = require('./lib/config');
 const { configured: supabaseConfigured, listSessions, restoreSession } = require('./lib/session-store');
 
+process.on('unhandledRejection', error => {
+    console.error('[PROCESS] Unhandled promise rejection:', error?.stack || error);
+});
+process.on('uncaughtException', error => {
+    console.error('[PROCESS] Uncaught exception:', error?.stack || error);
+});
+
 const app = express();
 
 const hasAuthState = (directory) => {

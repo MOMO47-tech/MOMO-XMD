@@ -2,7 +2,7 @@ services:
   - type: web
     name: momo-xmd-pairing
     env: node
-    buildCommand: npm install
+    buildCommand: npm ci --omit=dev
     startCommand: node launcher.js
     healthCheckPath: /health
     envVars:

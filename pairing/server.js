@@ -155,7 +155,17 @@ async function startBotFromAuth(sessionKey, authDir, persistentKey) {
         // The pairing page must not wait for the long-lived WhatsApp socket.
         // startBot() intentionally reconnects forever, so awaiting it leaves the
         // browser stuck in bot_starting even after the pairing code succeeded.
-        const botPromise = Promise.resolve(starter(authDir, persistentKey));
+        const startWithRetry = (attempt = 1) => Promise.resolve(starter(authDir, persistentKey)).catch(error => {
+            logger.error({ error: error.message, attempt }, 'Server-side bot startup failed; retrying');
+            updateSession(sessionKey, {
+                status: 'bot_starting',
+                botStarted: false,
+                message: `Bot startup retry ${attempt}`
+            });
+            const retryTimer = setTimeout(() => void startWithRetry(Math.min(attempt + 1, 60)), Math.min(60000, attempt * 10000));
+            if (typeof retryTimer.unref === 'function') retryTimer.unref();
+        });
+        const botPromise = startWithRetry();
         updateSession(sessionKey, { status: 'connected', botStarted: true });
         void botPromise.catch(error => {
             logger.error({ error: error.message }, 'Server-side bot startup failed');
@@ -163,7 +173,6 @@ async function startBotFromAuth(sessionKey, authDir, persistentKey) {
                 status: 'error',
                 message: `Bot startup failed: ${error.message}`
             });
-            removeAuthDir(authDir);
         });
     } catch (error) {
         logger.error({ error: error.message }, 'Server-side bot startup failed');
