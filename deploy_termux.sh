@@ -17,19 +17,19 @@ git fetch --prune origin "$BRANCH"
 # Use an explicit remote ref. This avoids ambiguity when Termux has another
 # remote (for example heroku/main) with the same branch name.
 git checkout -B "$BRANCH" "origin/$BRANCH"
+echo "Code iliyochaguliwa: $(git rev-parse --short HEAD) kwenye branch $(git branch --show-current)"
 # ffmpeg-static is intentionally Render-only; remove any stale failed Android install.
 rm -rf node_modules/ffmpeg-static
 npm install --omit=dev
 
 if command -v pm2 >/dev/null 2>&1; then
-  # Reload an existing process instead of deleting it first. PM2 keeps the
-  # process supervised and minimizes downtime while the updated code loads.
+  # Recreate the process so an old PM2 entry pointing to another checkout or
+  # branch cannot keep serving stale bot code after a successful git reset.
   if pm2 describe "$PROCESS_NAME" >/dev/null 2>&1; then
-    PORT="$PORT_NUMBER" NODE_ENV=production pm2 reload "$PROCESS_NAME" --update-env
-  else
-    PORT="$PORT_NUMBER" NODE_ENV=production pm2 start "$REPO_DIR/launcher.js" \
-      --name "$PROCESS_NAME" --cwd "$REPO_DIR" --update-env
+    pm2 delete "$PROCESS_NAME" >/dev/null 2>&1 || true
   fi
+  PORT="$PORT_NUMBER" NODE_ENV=production pm2 start "$REPO_DIR/launcher.js" \
+    --name "$PROCESS_NAME" --cwd "$REPO_DIR" --update-env
   pm2 save
   echo "MOMO-XMD ime-update na ku-reload kupitia PM2 kwenye Termux."
 else
