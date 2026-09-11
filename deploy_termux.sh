@@ -17,7 +17,8 @@ git fetch --prune origin "$BRANCH"
 # Use an explicit remote ref. This avoids ambiguity when Termux has another
 # remote (for example heroku/main) with the same branch name.
 git checkout -B "$BRANCH" "origin/$BRANCH"
-echo "Code iliyochaguliwa: $(git rev-parse --short HEAD) kwenye branch $(git branch --show-current)"
+BUILD_VERSION="$(git rev-parse HEAD)"
+echo "Code iliyochaguliwa: ${BUILD_VERSION:0:7} kwenye branch $(git branch --show-current)"
 # ffmpeg-static is intentionally Render-only; remove any stale failed Android install.
 rm -rf node_modules/ffmpeg-static
 npm install --omit=dev
@@ -28,13 +29,13 @@ if command -v pm2 >/dev/null 2>&1; then
   if pm2 describe "$PROCESS_NAME" >/dev/null 2>&1; then
     pm2 delete "$PROCESS_NAME" >/dev/null 2>&1 || true
   fi
-  PORT="$PORT_NUMBER" NODE_ENV=production pm2 start "$REPO_DIR/launcher.js" \
+  PORT="$PORT_NUMBER" NODE_ENV=production SOURCE_VERSION="$BUILD_VERSION" pm2 start "$REPO_DIR/launcher.js" \
     --name "$PROCESS_NAME" --cwd "$REPO_DIR" --update-env
   pm2 save
   echo "MOMO-XMD ime-update na ku-reload kupitia PM2 kwenye Termux."
 else
   echo "PM2 haipo; code imesync. Anzisha sasa:"
-  echo "cd \"$REPO_DIR\" && PORT=$PORT_NUMBER NODE_ENV=production node launcher.js"
+  echo "cd \"$REPO_DIR\" && PORT=$PORT_NUMBER NODE_ENV=production SOURCE_VERSION=$BUILD_VERSION node launcher.js"
 fi
 
 HEALTH_URL="http://127.0.0.1:${PORT_NUMBER}/health"
