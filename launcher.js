@@ -41,6 +41,7 @@ const findPersistedAuthDir = () => {
         })[0] || null;
 };
 const port = process.env.PORT || 8000;
+console.log(`[LAUNCHER] build=${process.env.SOURCE_VERSION || process.env.HEROKU_SLUG_COMMIT || 'unknown'} node=${process.version}`);
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));

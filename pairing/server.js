@@ -21,7 +21,12 @@ app.use(express.json({ limit: '1mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get(['/health', '/healthz'], (_req, res) => {
-    res.json({ ok: true, service: 'momo-xmd-pairing', uptime: process.uptime() });
+    res.json({
+        ok: true,
+        service: 'momo-xmd-pairing',
+        uptime: process.uptime(),
+        version: process.env.SOURCE_VERSION || process.env.HEROKU_SLUG_COMMIT || 'unknown'
+    });
 });
 
 const PORT = Number(process.env.PORT || 8000);
