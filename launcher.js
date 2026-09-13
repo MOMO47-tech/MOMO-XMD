@@ -57,6 +57,10 @@ app.use('/', pairingServer);
 const startBotWithRetry = (options, label) => {
     startBot(options).catch(error => {
         console.error(`[BOT START ERROR]${label ? ` ${label}` : ''}:`, error);
+        if (error?.code === 'WHATSAPP_LOGGED_OUT') {
+            console.warn('[LAUNCHER] WhatsApp session is logged out; keeping pairing server online for a new pair.');
+            return;
+        }
         setTimeout(() => startBotWithRetry(options, label), 15000).unref?.();
     });
 };
