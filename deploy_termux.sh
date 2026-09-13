@@ -25,7 +25,7 @@ if command -v pkg >/dev/null 2>&1 && ! command -v ffmpeg >/dev/null 2>&1; then
   echo 'ffmpeg haipo Termux; na-install package ya Termux...'
   pkg install -y ffmpeg
 fi
-npm install --omit=dev
+npm install --omit=dev --omit=optional
 
 if command -v pm2 >/dev/null 2>&1; then
   # Recreate the process so an old PM2 entry pointing to another checkout or
