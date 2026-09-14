@@ -6,7 +6,7 @@ const {
     makeCacheableSignalKeyStore,
     DisconnectReason,
     fetchLatestBaileysVersion
-} = require('@whiskeysockets/baileys');
+} = require('stian-baileys');
 const pino = require('pino');
 const path = require('path');
 const fs = require('fs');
