@@ -24,6 +24,7 @@
     "sharp": "^0.33.5",
     "socks-proxy-agent": "^8.0.3",
     "stian-baileys": "~0.2.2",
+    "youtube-dl-exec": "^3.1.15",
     "yt-search": "^2.13.1"
   },
   "optionalDependencies": {
