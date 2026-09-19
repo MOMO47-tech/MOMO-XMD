@@ -2,7 +2,7 @@ services:
   - type: web
     name: momo-xmd-pairing
     env: node
-    buildCommand: npm ci --omit=dev
+    buildCommand: YOUTUBE_DL_SKIP_PYTHON_CHECK=1 npm ci --omit=dev
     startCommand: node launcher.js
     healthCheckPath: /health
     envVars:
@@ -28,3 +28,5 @@ services:
         value: https://api.openai.com/v1
       - key: CHATBOT_MODEL
         value: gpt-4o-mini
+      - key: YOUTUBE_DL_SKIP_PYTHON_CHECK
+        value: "1"
