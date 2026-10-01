@@ -10,15 +10,12 @@ const { HttpProxyAgent } = require('http-proxy-agent')
 const { HttpsProxyAgent } = require('https-proxy-agent')
 
 // ===== PROXY LIST =====
-const PROXIES = [
-    'http://xclayddg:us4xfz7g8vto@31.59.20.176:6754',
-    'http://xclayddg:us4xfz7g8vto@31.56.127.193:7684',
-    'http://xclayddg:us4xfz7g8vto@45.38.107.97:6014',
-    'http://xclayddg:us4xfz7g8vto@198.105.121.200:6462',
-    'http://xclayddg:us4xfz7g8vto@64.137.96.74:6641',
-    'http://xclayddg:us4xfz7g8vto@198.23.243.226:6361',
-    'http://xclayddg:us4xfz7g8vto@38.154.185.97:6370'
-]
+// Keep proxy credentials out of source control. The active deployment uses
+// launcher.js; this legacy entrypoint accepts comma-separated runtime config.
+const PROXIES = String(process.env.PAIRING_PROXIES || '')
+    .split(',')
+    .map(value => value.trim())
+    .filter(Boolean)
 
 let proxyIndex = 0
 
