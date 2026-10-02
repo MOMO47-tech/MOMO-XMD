@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const { startBot } = require('./lib/bot');
 const config = require('./lib/config');
 const { configured: supabaseConfigured, listSessions, restoreSession } = require('./lib/session-store');
@@ -65,6 +66,38 @@ const startBotWithRetry = (options, label) => {
     });
 };
 
+const sessionDirectoryFor = (sessionKey) => {
+    const digest = crypto.createHash('sha256').update(String(sessionKey)).digest('hex').slice(0, 16);
+    return path.join(__dirname, `session_${digest}`);
+};
+
+const restoreAllSupabaseSessions = async () => {
+    const keys = await listSessions();
+    if (!keys.length) {
+        console.log('[LAUNCHER] Supabase has no paired auth. Use the web interface to pair.');
+        return;
+    }
+
+    console.log(`[LAUNCHER] Restoring ${keys.length} paired user session(s) from Supabase`);
+    for (const sessionKey of keys) {
+        const authDir = sessionDirectoryFor(sessionKey);
+        try {
+            const restored = await restoreSession(sessionKey, authDir);
+            if (!restored) {
+                console.warn(`[LAUNCHER] Skipping ${sessionKey.slice(0, 18)}...: no valid creds.json`);
+                continue;
+            }
+            console.log(`[LAUNCHER] Restoring paired auth from Supabase (${sessionKey.slice(0, 18)}...)`);
+            startBotWithRetry({ authDir, sessionId: null, sessionKey }, `Supabase session ${sessionKey.slice(0, 18)}...`);
+            // Stagger socket handshakes so a restart does not open every
+            // WhatsApp connection at the exact same instant.
+            await new Promise(resolve => setTimeout(resolve, 1500));
+        } catch (error) {
+            console.error(`[LAUNCHER] Could not restore ${sessionKey.slice(0, 18)}...:`, error?.message || error);
+        }
+    }
+};
+
 app.listen(port, '0.0.0.0', () => {
     console.log(`[MOMO-XMD Universal Launcher] Running on port ${port}`);
     
@@ -73,23 +106,11 @@ app.listen(port, '0.0.0.0', () => {
     if (sessionId) {
         console.log('[LAUNCHER] Starting bot with existing session...');
         startBotWithRetry({}, 'existing session');
+    } else if (supabaseConfigured()) {
+        restoreAllSupabaseSessions().catch(err => console.error('[BOT START ERROR] Supabase restore:', err));
     } else if (persistedAuthDir) {
         console.log(`[LAUNCHER] Restoring paired auth from ${persistedAuthDir}`);
         startBotWithRetry({ authDir: persistedAuthDir, sessionId: null }, 'local paired auth');
-    } else if (supabaseConfigured()) {
-        listSessions().then(async (keys) => {
-            if (!keys.length) {
-                console.log('[LAUNCHER] Supabase has no paired auth. Use the web interface to pair.');
-                return;
-            }
-            // One socket is started per deployment. Keep the newest persisted
-            // account active; additional accounts remain safely stored.
-            const sessionKey = process.env.SUPABASE_SESSION_KEY || keys[0];
-            const authDir = path.join(__dirname, 'session');
-            await restoreSession(sessionKey, authDir);
-            console.log(`[LAUNCHER] Restoring paired auth from Supabase (${sessionKey.slice(0, 18)}...)`);
-            startBotWithRetry({ authDir, sessionId: null, sessionKey }, 'Supabase session');
-        }).catch(err => console.error('[BOT START ERROR]:', err));
     } else {
         console.log('[LAUNCHER] No paired auth found. Use the web interface to pair; bot will start automatically after linking.');
     }
