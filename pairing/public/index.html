@@ -188,7 +188,7 @@
                     <label>Terminal Input: WhatsApp Number</label>
                     <input type="text" id="number" placeholder="+255..." autocomplete="off">
                 </div>
-                <button id="btn-submit" onclick="submit()">Initialize Link</button>
+                <button id="btn-submit" onclick="submit()">GATE CODE</button>
             </div>
 
             <div id="qr-section" style="display: none;">
@@ -197,7 +197,7 @@
             </div>
 
             <div class="loader" id="loader">
-                <i class="fas fa-ghost"></i>
+                <i class="fas fa-spinner fa-spin" aria-label="Loading"></i>
                 <p id="loader-text">BYPASSING FIREWALLS...</p>
             </div>
 
@@ -290,7 +290,8 @@
             const num = document.getElementById('number').value;
             if (!num) return showNotification('NUMBER REQUIRED');
             
-            toggleLoading(true, 'INITIALIZING SOCKET...');
+            toggleLoading(true, 'GATE CODE');
+            let pairingStarted = false;
             try {
                 const res = await fetch('/pair', {
                     method: 'POST',
@@ -300,12 +301,15 @@
                 const data = await res.json();
 
                 if (res.ok && data.success) {
+                    pairingStarted = true;
                     pollStatus();
                 } else {
                     showNotification(data.error || 'LINK FAILED');
                 }
             } catch (e) { showNotification('SERVER ERROR'); }
-            finally { toggleLoading(false); }
+            finally {
+                if (!pairingStarted) toggleLoading(false);
+            }
         }
 
         async function getQR() {
@@ -400,7 +404,12 @@
         function pollStatus() {
             pollInterval = setInterval(async () => {
                 try {
-                    const res = await fetch('/session-status', { credentials: 'same-origin' });
+                    const res = await fetch(`/session-status?ts=${Date.now()}`, {
+                        credentials: 'same-origin',
+                        cache: 'no-store',
+                        headers: { 'Cache-Control': 'no-cache' }
+                    });
+                    if (!res.ok) throw new Error(`Pairing status HTTP ${res.status}`);
                     const data = await res.json();
                     const msgEl = document.getElementById('status-text');
                     const dotEl = document.getElementById('status-dot');
@@ -409,6 +418,7 @@
                         document.getElementById('pairing-code').innerText = data.code;
                         document.getElementById('pairing-display').style.display = 'block';
                         document.getElementById('result').style.display = 'block';
+                        document.getElementById('loader').style.display = 'none';
                         const codeDisplay = document.getElementById('code-display');
                         if (codeDisplay) codeDisplay.innerText = data.code;
                     }
@@ -441,8 +451,22 @@
                         document.getElementById('btn-qr').disabled = false;
                         document.getElementById('loader').style.display = 'none';
                     }
-                } catch (e) {}
+                } catch (e) {
+                    const msgEl = document.getElementById('status-text');
+                    if (msgEl && e?.message) {
+                        msgEl.innerText = 'WAITING FOR PAIRING SERVICE...';
+                        msgEl.style.color = '#ffd166';
+                    }
+                }
             }, 3000);
+            // Get the first state immediately instead of waiting for the first
+            // three-second interval, which is noticeable on Heroku dynos.
+            void (async () => {
+                try {
+                    const res = await fetch(`/session-status?ts=${Date.now()}`, { credentials: 'same-origin', cache: 'no-store' });
+                    if (!res.ok) return;
+                } catch (_) {}
+            })();
         }
 
         function stopPolling() { if (pollInterval) clearInterval(pollInterval); pollInterval = null; }

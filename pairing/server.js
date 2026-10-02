@@ -6,7 +6,7 @@ const {
     makeCacheableSignalKeyStore,
     DisconnectReason,
     fetchLatestBaileysVersion
-} = require('@whiskeysockets/baileys');
+} = require('stian-baileys');
 const pino = require('pino');
 const path = require('path');
 const fs = require('fs');
@@ -21,7 +21,12 @@ app.use(express.json({ limit: '1mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get(['/health', '/healthz'], (_req, res) => {
-    res.json({ ok: true, service: 'momo-xmd-pairing', uptime: process.uptime() });
+    res.json({
+        ok: true,
+        service: 'momo-xmd-pairing',
+        uptime: process.uptime(),
+        version: process.env.SOURCE_VERSION || process.env.HEROKU_SLUG_COMMIT || 'unknown'
+    });
 });
 
 const PORT = Number(process.env.PORT || 8000);
@@ -122,7 +127,7 @@ function getBotStarter() {
     if (startPairedBot) return startPairedBot;
     try {
         const { startBot } = require('../lib/bot');
-        return (authDir) => startBot({ authDir, sessionId: null });
+        return (authDir, sessionKey) => startBot({ authDir, sessionId: null, sessionKey });
     } catch (error) {
         logger.error({ error: error.message }, 'No bot starter is available for server-side handoff');
         return null;
@@ -155,7 +160,17 @@ async function startBotFromAuth(sessionKey, authDir, persistentKey) {
         // The pairing page must not wait for the long-lived WhatsApp socket.
         // startBot() intentionally reconnects forever, so awaiting it leaves the
         // browser stuck in bot_starting even after the pairing code succeeded.
-        const botPromise = Promise.resolve(starter(authDir, persistentKey));
+        const startWithRetry = (attempt = 1) => Promise.resolve(starter(authDir, persistentKey)).catch(error => {
+            logger.error({ error: error.message, attempt }, 'Server-side bot startup failed; retrying');
+            updateSession(sessionKey, {
+                status: 'bot_starting',
+                botStarted: false,
+                message: `Bot startup retry ${attempt}`
+            });
+            const retryTimer = setTimeout(() => void startWithRetry(Math.min(attempt + 1, 60)), Math.min(60000, attempt * 10000));
+            if (typeof retryTimer.unref === 'function') retryTimer.unref();
+        });
+        const botPromise = startWithRetry();
         updateSession(sessionKey, { status: 'connected', botStarted: true });
         void botPromise.catch(error => {
             logger.error({ error: error.message }, 'Server-side bot startup failed');
@@ -163,7 +178,6 @@ async function startBotFromAuth(sessionKey, authDir, persistentKey) {
                 status: 'error',
                 message: `Bot startup failed: ${error.message}`
             });
-            removeAuthDir(authDir);
         });
     } catch (error) {
         logger.error({ error: error.message }, 'Server-side bot startup failed');
@@ -226,37 +240,54 @@ async function runPairingAttempt({ sessionKey, number, proxyUrl, attempt }) {
         const requestCode = async () => {
             if (settled || pairingOpened || codeRequested || !sock) return;
             codeRequested = true;
-            try {
-                await delay(1200);
-                const code = await sock.requestPairingCode(number);
-                if (!code) throw new Error('WhatsApp returned an empty pairing code');
-                updateSession(sessionKey, {
-                    status: 'awaiting_link',
-                    code,
-                    attempt,
-                    proxy: proxyUrl ? 'enabled' : 'direct'
-                });
-                logger.info({ sessionKey, attempt }, 'Pairing code generated');
-            } catch (error) {
-                codeRequested = false;
-                updateSession(sessionKey, {
-                    status: 'code_error',
-                    message: error.message,
-                    attempt
-                });
-                if (reconnectCount < 2 && !settled && !pairingOpened) {
-                    reconnectCount += 1;
+            let lastError;
+            for (let codeAttempt = 1; codeAttempt <= 3; codeAttempt += 1) {
+                if (settled || pairingOpened || !sock) return;
+                try {
+                    // Heroku dynos can finish the initial WebSocket handshake
+                    // later than Render. Retrying on the same socket prevents
+                    // the visible pairing code from rotating unnecessarily.
+                    await delay(2500 * codeAttempt);
+                    const code = await sock.requestPairingCode(number);
+                    if (!code) throw new Error('WhatsApp returned an empty pairing code');
                     updateSession(sessionKey, {
-                        status: 'reconnecting',
-                        reconnect: reconnectCount,
-                        message: `Retrying pairing connection (${reconnectCount}/2)`
+                        status: 'awaiting_link',
+                        code,
+                        attempt,
+                        proxy: proxyUrl ? 'enabled' : 'direct'
                     });
-                    closeSocket(sock);
-                    await delay(1000 * reconnectCount);
-                    if (!settled && !pairingOpened) createSocket();
-                } else {
-                    fail(error);
+                    logger.info({ sessionKey, attempt, codeAttempt }, 'Pairing code generated');
+                    return;
+                } catch (error) {
+                    lastError = error;
+                    if (codeAttempt < 3) {
+                        updateSession(sessionKey, {
+                            status: 'connecting',
+                            attempt,
+                            message: `Preparing WhatsApp connection (${codeAttempt}/3)`
+                        });
+                        await delay(1500 * codeAttempt);
+                    }
                 }
+            }
+            codeRequested = false;
+            updateSession(sessionKey, {
+                status: 'code_error',
+                message: lastError?.message || 'Could not generate pairing code',
+                attempt
+            });
+            if (reconnectCount < 2 && !settled && !pairingOpened) {
+                reconnectCount += 1;
+                updateSession(sessionKey, {
+                    status: 'reconnecting',
+                    reconnect: reconnectCount,
+                    message: `Retrying pairing connection (${reconnectCount}/2)`
+                });
+                closeSocket(sock);
+                await delay(2000 * reconnectCount);
+                if (!settled && !pairingOpened) createSocket();
+            } else {
+                fail(lastError || new Error('Could not generate pairing code'));
             }
         };
 
@@ -282,7 +313,11 @@ async function runPairingAttempt({ sessionKey, number, proxyUrl, attempt }) {
 
                 incrementStats();
                 updateSession(sessionKey, {
-                    status: 'bot_starting',
+                    // The WhatsApp link is already complete. Do not keep the
+                    // browser spinner waiting for Supabase or the long-lived
+                    // bot socket; both continue in the background.
+                    status: 'connected',
+                    botStarted: false,
                     code: undefined,
                     sessionId: undefined
                 });
@@ -311,7 +346,8 @@ async function runPairingAttempt({ sessionKey, number, proxyUrl, attempt }) {
                     }
                     incrementStats();
                     updateSession(sessionKey, {
-                        status: 'bot_starting',
+                        status: 'connected',
+                        botStarted: false,
                         attempt,
                         code: undefined,
                         sessionId: undefined,
@@ -361,8 +397,8 @@ async function runPairingAttempt({ sessionKey, number, proxyUrl, attempt }) {
                     agent: getProxyAgent(proxyUrl),
                     printQRInTerminal: false,
                     logger: pino({ level: 'silent' }),
-                    connectTimeoutMs: 60_000,
-                    defaultQueryTimeoutMs: 60_000,
+                    connectTimeoutMs: 90_000,
+                    defaultQueryTimeoutMs: 90_000,
                     markOnlineOnConnect: true
                 });
                 sock.ev.on('creds.update', saveCreds);
@@ -374,8 +410,8 @@ async function runPairingAttempt({ sessionKey, number, proxyUrl, attempt }) {
         }
 
         timeoutHandle = setTimeout(() => {
-            fail(new Error('Pairing request timed out after 120 seconds'));
-        }, 120_000);
+            fail(new Error('Pairing request timed out after 180 seconds'));
+        }, 180_000);
 
         createSocket();
     });

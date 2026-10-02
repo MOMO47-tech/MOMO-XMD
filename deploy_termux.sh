@@ -21,7 +21,18 @@ BUILD_VERSION="$(git rev-parse HEAD)"
 echo "Code iliyochaguliwa: ${BUILD_VERSION:0:7} kwenye branch $(git branch --show-current)"
 # ffmpeg-static is intentionally Render-only; remove any stale failed Android install.
 rm -rf node_modules/ffmpeg-static
-npm install --omit=dev
+if command -v pkg >/dev/null 2>&1 && ! command -v ffmpeg >/dev/null 2>&1; then
+  echo 'ffmpeg haipo Termux; na-install package ya Termux...'
+  pkg install -y ffmpeg
+fi
+if command -v pkg >/dev/null 2>&1 && ! command -v python3 >/dev/null 2>&1; then
+  echo 'python3 haipo Termux; na-install kwa yt-dlp...'
+  pkg install -y python
+  if command -v python >/dev/null 2>&1 && [ ! -e "$PREFIX/bin/python3" ]; then
+    ln -s "$(command -v python)" "$PREFIX/bin/python3"
+  fi
+fi
+npm install --omit=dev --omit=optional
 
 if command -v pm2 >/dev/null 2>&1; then
   # Recreate the process so an old PM2 entry pointing to another checkout or

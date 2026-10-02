@@ -67,8 +67,8 @@ Heroku na Render hutumia repository <https://github.com/MOMO47-tech/MOMO-XMD>, b
 ```bash
 cd "$HOME/MOMO-XMD"
 git fetch origin
-git checkout main
-git pull --ff-only origin main
+git checkout heroku-bot-deploy
+git pull --ff-only origin heroku-bot-deploy
 npm install --omit=dev
 ```
 

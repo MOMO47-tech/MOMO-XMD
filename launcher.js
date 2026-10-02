@@ -5,6 +5,13 @@ const { startBot } = require('./lib/bot');
 const config = require('./lib/config');
 const { configured: supabaseConfigured, listSessions, restoreSession } = require('./lib/session-store');
 
+process.on('unhandledRejection', error => {
+    console.error('[PROCESS] Unhandled promise rejection:', error?.stack || error);
+});
+process.on('uncaughtException', error => {
+    console.error('[PROCESS] Uncaught exception:', error?.stack || error);
+});
+
 const app = express();
 
 const hasAuthState = (directory) => {
@@ -34,6 +41,7 @@ const findPersistedAuthDir = () => {
         })[0] || null;
 };
 const port = process.env.PORT || 8000;
+console.log(`[LAUNCHER] build=${process.env.SOURCE_VERSION || process.env.HEROKU_SLUG_COMMIT || 'unknown'} node=${process.version}`);
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
@@ -49,6 +57,10 @@ app.use('/', pairingServer);
 const startBotWithRetry = (options, label) => {
     startBot(options).catch(error => {
         console.error(`[BOT START ERROR]${label ? ` ${label}` : ''}:`, error);
+        if (error?.code === 'WHATSAPP_LOGGED_OUT') {
+            console.warn('[LAUNCHER] WhatsApp session is logged out; keeping pairing server online for a new pair.');
+            return;
+        }
         setTimeout(() => startBotWithRetry(options, label), 15000).unref?.();
     });
 };

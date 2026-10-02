@@ -23,7 +23,7 @@ const {
     makeCacheableSignalKeyStore,
     DisconnectReason,
     Browsers
-} = require('@whiskeysockets/baileys')
+} = require('stian-baileys')
 const pino = require('pino')
 const NodeCache = require('node-cache')
 const fs = require('fs')
