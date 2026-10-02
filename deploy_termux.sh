@@ -47,8 +47,15 @@ if command -v pm2 >/dev/null 2>&1; then
   pm2 save
   echo "MOMO-XMD ime-update na ku-reload kupitia PM2 kwenye Termux."
 else
-  echo "PM2 haipo; code imesync. Anzisha sasa:"
-  echo "cd \"$REPO_DIR\" && PORT=$PORT_NUMBER NODE_ENV=production SOURCE_VERSION=$BUILD_VERSION node launcher.js"
+  LOG_FILE="$REPO_DIR/momo-xmd.log"
+  PID_FILE="$REPO_DIR/momo-xmd.pid"
+  if [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
+    kill "$(cat "$PID_FILE")" 2>/dev/null || true
+    sleep 2
+  fi
+  echo "PM2 haipo; naanzisha bot kwa nohup. Logs: $LOG_FILE"
+  (cd "$REPO_DIR" && PORT="$PORT_NUMBER" NODE_ENV=production SOURCE_VERSION="$BUILD_VERSION" nohup node launcher.js >> "$LOG_FILE" 2>&1 & echo $! > "$PID_FILE")
+  echo "Bot PID: $(cat "$PID_FILE")"
 fi
 
 HEALTH_URL="http://127.0.0.1:${PORT_NUMBER}/health"
