@@ -2,7 +2,9 @@
 set -euo pipefail
 
 REPO_DIR="${MOMO_XMD_DIR:-$HOME/MOMO-XMD}"
-BRANCH="${MOMO_XMD_BRANCH:-heroku-bot-deploy}"
+# main is the canonical branch. Override with MOMO_XMD_BRANCH only when a
+# deployment is intentionally pinned to another branch.
+BRANCH="${MOMO_XMD_BRANCH:-main}"
 PORT_NUMBER="${MOMO_XMD_PORT:-8000}"
 PROCESS_NAME="${MOMO_XMD_PROCESS_NAME:-MOMO-XMD}"
 
