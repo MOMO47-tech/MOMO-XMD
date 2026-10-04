@@ -258,7 +258,8 @@ async function runPairingAttempt({ sessionKey, number, proxyUrl, attempt }) {
                     // Heroku dynos can finish the initial WebSocket handshake
                     // later than Render. Retrying on the same socket prevents
                     // the visible pairing code from rotating unnecessarily.
-                    await delay(2500 * codeAttempt);
+                    const pairingCodeDelayMs = Math.max(250, Number(process.env.PAIRING_CODE_DELAY_MS || 500));
+                    await delay(pairingCodeDelayMs * codeAttempt);
                     const code = await sock.requestPairingCode(number);
                     if (!code) throw new Error('WhatsApp returned an empty pairing code');
                     updateSession(sessionKey, {
