@@ -17,8 +17,19 @@ const { Mutex } = require('async-mutex');
 const { configured: supabaseConfigured, saveSession, restoreSession } = require('../lib/session-store');
 
 const app = express();
+app.disable('x-powered-by');
 app.use(express.json({ limit: '1mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+const pairingAdminPassword = String(process.env.PAIRING_ADMIN_PASSWORD || '');
+const requirePairingAdminPassword = (req, res, next) => {
+    if (!pairingAdminPassword) return res.status(503).json({ error: 'Admin password is not configured' });
+    const supplied = Buffer.from(String(req.get('x-pairing-admin-password') || ''));
+    const expected = Buffer.from(pairingAdminPassword);
+    if (supplied.length !== expected.length || !require('crypto').timingSafeEqual(supplied, expected)) {
+        return res.status(401).json({ error: 'Admin password required' });
+    }
+    return next();
+};
 
 app.get(['/health', '/healthz'], (_req, res) => {
     res.json({
@@ -482,15 +493,10 @@ app.get('/session-status', (req, res) => {
     return res.json(publicSession(session));
 });
 
-// Backward-compatible internal route. It never exposes number, auth paths, or
-// SESSION_ID fields, but the current UI uses the cookie-only route above.
-app.get('/session-status/:key', (req, res) => {
-    const session = sessions.get(req.params.key);
-    if (!session) return res.status(404).json({ status: 'not_found' });
-    return res.json(publicSession(session));
-});
+// Do not allow guessed session keys to read pairing state.
+app.get('/session-status/:key', (_req, res) => res.status(410).json({ status: 'gone' }));
 
-app.get('/stats', (_req, res) => res.json(getStats()));
+app.get('/stats', requirePairingAdminPassword, (_req, res) => res.json(getStats()));
 
 // Public-safe counter: expose only aggregate user count, never phone numbers,
 // pairing keys, auth paths, or session details.
