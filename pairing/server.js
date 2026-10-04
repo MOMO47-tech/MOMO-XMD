@@ -39,6 +39,7 @@ app.get(['/health', '/healthz'], (_req, res) => {
         version: process.env.SOURCE_VERSION || process.env.HEROKU_SLUG_COMMIT || 'unknown'
     });
 });
+app.get('/', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
 const PORT = Number(process.env.PORT || 8000);
 const logger = pino({ level: process.env.LOG_LEVEL || 'info' });
@@ -456,6 +457,7 @@ async function runPairing(sessionKey, number) {
 app.get('/pair', (_req, res) => {
     return res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+app.get('/qr', (_req, res) => res.status(404).json({ error: 'QR pairing is unavailable; use phone-number pairing.' }));
 
 app.post('/pair', async (req, res) => {
     const number = normalizeNumber(req.body?.number);
