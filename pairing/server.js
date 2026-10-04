@@ -19,7 +19,8 @@ const { configured: supabaseConfigured, saveSession, restoreSession } = require(
 const app = express();
 app.disable('x-powered-by');
 app.use(express.json({ limit: '1mb' }));
-app.use(express.static(path.join(__dirname, 'public')));
+const pairingPage = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
+app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 const pairingAdminPassword = String(process.env.PAIRING_ADMIN_PASSWORD || '');
 const requirePairingAdminPassword = (req, res, next) => {
     if (!pairingAdminPassword) return res.status(503).json({ error: 'Admin password is not configured' });
@@ -39,7 +40,7 @@ app.get(['/health', '/healthz'], (_req, res) => {
         version: process.env.SOURCE_VERSION || process.env.HEROKU_SLUG_COMMIT || 'unknown'
     });
 });
-app.get('/', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+app.get('/', (_req, res) => res.type('html').send(pairingPage));
 
 const PORT = Number(process.env.PORT || 8000);
 const logger = pino({ level: process.env.LOG_LEVEL || 'info' });
@@ -455,7 +456,7 @@ async function runPairing(sessionKey, number) {
 // Allow users to open the pairing URL directly in a browser. The actual
 // pairing request remains POST-only and is called by the page JavaScript.
 app.get('/pair', (_req, res) => {
-    return res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    return res.type('html').send(pairingPage);
 });
 app.get('/qr', (_req, res) => res.status(404).json({ error: 'QR pairing is unavailable; use phone-number pairing.' }));
 
