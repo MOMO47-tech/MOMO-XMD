@@ -13,7 +13,6 @@ const fs = require('fs');
 const { HttpProxyAgent } = require('http-proxy-agent');
 const { HttpsProxyAgent } = require('https-proxy-agent');
 const { SocksProxyAgent } = require('socks-proxy-agent');
-const { Mutex } = require('async-mutex');
 const { configured: supabaseConfigured, saveSession, restoreSession } = require('../lib/session-store');
 
 const app = express();
@@ -44,7 +43,6 @@ app.get('/', (_req, res) => res.type('html').send(pairingPage));
 
 const PORT = Number(process.env.PORT || 8000);
 const logger = pino({ level: process.env.LOG_LEVEL || 'info' });
-const setupMutex = new Mutex();
 const sessions = new Map();
 let startPairedBot = null;
 
@@ -466,27 +464,24 @@ app.post('/pair', async (req, res) => {
         return res.status(400).json({ success: false, error: 'Valid WhatsApp number required' });
     }
 
-    let sessionKey;
-    const release = await setupMutex.acquire();
-    try {
-        sessionKey = `momo_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-        sessions.set(sessionKey, {
-            status: 'starting',
-            number,
-            createdAt: Date.now(),
-            updatedAt: Date.now()
-        });
-    } catch (error) {
-        return res.status(500).json({ success: false, error: error.message });
-    } finally {
-        release();
-    }
+    const sessionKey = `momo_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    sessions.set(sessionKey, {
+        status: 'starting',
+        number,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+    });
 
     // Keep the opaque pairing key server-side. The browser receives only an
     // HttpOnly cookie and never receives a WhatsApp SESSION_ID or session key.
     res.setHeader('Set-Cookie', `momo_pairing_token=${encodeURIComponent(sessionKey)}; HttpOnly; SameSite=Lax; Path=/; Max-Age=600`);
-    void runPairing(sessionKey, number);
-    return res.status(202).json({ success: true });
+    res.status(202).json({ success: true });
+    setImmediate(() => {
+        void runPairing(sessionKey, number).catch(error => {
+            logger.error({ sessionKey, error: error.message }, 'Pairing job failed unexpectedly');
+            updateSession(sessionKey, { status: 'error', message: 'Pairing failed; please try again.' });
+        });
+    });
 });
 
 app.get('/session-status', (req, res) => {
