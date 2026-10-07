@@ -9,13 +9,13 @@ def to_bold(text):
     return "".join(bold_map.get(c, c) for c in text)
 
 owner_menu = [
-    "autoviewstatus", "autolikestatus", "setstatus emoj", "autosavestatus", "restart", "update",
+    "autoviewstatus", "autolikestatus", "setstatus emoj", "autosavestatus", "welcome", "goodbye", "restart", "update",
     "setfont", "chatbot", "autorecording", "autotyping", "alwaysonline", "owner", "pairing",
     "ping", "repo", "runtime", "channel", "mode", "tagall", "hidetag"
 ]
 
 group_menu = [
-    "add", "antilink", "antigroupmention", "kick", "promote", "demote", "welcome", "goodbye",
+    "add", "antilink", "antigroupmention", "kick", "promote", "demote",
     "open", "close", "announcements"
 ]
 
