@@ -13,7 +13,17 @@ const fs = require('fs');
 const { HttpProxyAgent } = require('http-proxy-agent');
 const { HttpsProxyAgent } = require('https-proxy-agent');
 const { SocksProxyAgent } = require('socks-proxy-agent');
-const { configured: supabaseConfigured, saveSession, restoreSession } = require('../lib/session-store');
+// The standalone Vercel pairing deployment only includes this directory.
+// Keep the optional root-level Supabase session store available when running
+// the full repository, but do not crash the public pairing page if it is absent.
+let supabaseConfigured = () => false;
+let saveSession = async () => false;
+let restoreSession = async () => false;
+try {
+    ({ configured: supabaseConfigured, saveSession, restoreSession } = require('../lib/session-store'));
+} catch (_) {
+    // Optional in the standalone pairing service.
+}
 
 const app = express();
 app.disable('x-powered-by');
