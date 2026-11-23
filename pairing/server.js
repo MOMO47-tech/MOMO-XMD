@@ -1,12 +1,21 @@
 const express = require('express');
-const {
-    default: makeWASocket,
-    useMultiFileAuthState,
-    delay,
-    makeCacheableSignalKeyStore,
-    DisconnectReason,
-    fetchLatestBaileysVersion
-} = require('stian-baileys');
+// Load the WhatsApp stack only when a pairing attempt is requested. This keeps
+// Vercel's lightweight health/page invocations from failing on native modules.
+let baileys;
+function getBaileys() {
+    if (!baileys) {
+        const loaded = require('stian-baileys');
+        baileys = {
+            makeWASocket: loaded.default,
+            useMultiFileAuthState: loaded.useMultiFileAuthState,
+            delay: loaded.delay,
+            makeCacheableSignalKeyStore: loaded.makeCacheableSignalKeyStore,
+            DisconnectReason: loaded.DisconnectReason,
+            fetchLatestBaileysVersion: loaded.fetchLatestBaileysVersion
+        };
+    }
+    return baileys;
+}
 const pino = require('pino');
 const path = require('path');
 const fs = require('fs');
@@ -211,6 +220,7 @@ async function startBotFromAuth(sessionKey, authDir, persistentKey) {
 }
 
 async function runPairingAttempt({ sessionKey, number, proxyUrl, attempt }) {
+    const { makeWASocket, useMultiFileAuthState, delay, makeCacheableSignalKeyStore, DisconnectReason, fetchLatestBaileysVersion } = getBaileys();
     const authDir = path.join(__dirname, `temp_${sessionKey}_${attempt}`);
     let sock = null;
     let settled = false;
