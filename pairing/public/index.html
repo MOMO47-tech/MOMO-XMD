@@ -3,23 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MOMO-XMD | BLUE DARK WEB</title>
+    <title>MOMO-XMD | GREEN DARK WEB</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Creepster&family=Nosifer&family=Share+Tech+Mono&display=swap');
 
         :root {
-            --primary: #00d4ff;
-            --secondary: #0055ff;
-            --bg: #000510;
-            --card-bg: rgba(0, 10, 30, 0.9);
+            --primary: #39ff88;
+            --secondary: #087a3f;
+            --bg: #020b06;
+            --card-bg: rgba(0, 22, 10, 0.92);
             --glow: 0 0 15px var(--primary), 0 0 30px var(--secondary);
             --text-glow: 0 0 10px var(--primary);
         }
 
         body {
             background-color: var(--bg);
-            background-image: radial-gradient(circle at 50% 50%, #001a33 0%, #000510 100%);
+            background-image: radial-gradient(circle at 50% 50%, #06351a 0%, #020b06 100%);
             color: var(--primary);
             font-family: 'Share Tech Mono', monospace;
             display: flex;
@@ -49,7 +49,7 @@
 
         .marquee {
             position: fixed; top: 0; width: 100%;
-            background: rgba(0, 85, 255, 0.2);
+            background: rgba(8, 122, 63, 0.22);
             border-bottom: 1px solid var(--primary);
             padding: 10px 0; white-space: nowrap; overflow: hidden; z-index: 10;
         }
@@ -79,18 +79,18 @@
         }
 
         .logo { font-family: 'Nosifer', cursive; font-size: 2.5rem; color: var(--primary); text-shadow: var(--text-glow); margin-bottom: 10px; }
-        .subtitle { font-size: 0.8rem; letter-spacing: 2px; margin-bottom: 30px; color: #88ccff; text-transform: uppercase; }
+        .subtitle { font-size: 0.8rem; letter-spacing: 2px; margin-bottom: 30px; color: #9cffbd; text-transform: uppercase; }
 
         .tabs { display: flex; gap: 15px; margin-bottom: 25px; }
         .tab {
             flex: 1; padding: 12px; border: 1px solid var(--primary); border-radius: 5px;
             cursor: pointer; transition: 0.3s; text-transform: uppercase; font-weight: bold;
-            background: rgba(0, 212, 255, 0.05);
+            background: rgba(57, 255, 136, 0.06);
         }
         .tab.active { background: var(--primary); color: #000; box-shadow: 0 0 15px var(--primary); }
 
         .form-group { margin-bottom: 20px; text-align: left; }
-        label { display: block; margin-bottom: 8px; font-size: 0.7rem; text-transform: uppercase; color: #88ccff; }
+        label { display: block; margin-bottom: 8px; font-size: 0.7rem; text-transform: uppercase; color: #9cffbd; }
         input {
             width: 100%; padding: 15px; background: rgba(0, 0, 0, 0.5);
             border: 1px solid var(--primary); color: var(--primary);
@@ -110,7 +110,7 @@
         #result { margin-top: 30px; display: none; border-top: 1px solid var(--primary); padding-top: 20px; }
         
         .code-box {
-            margin: 20px 0; padding: 20px; background: rgba(0, 212, 255, 0.1);
+            margin: 20px 0; padding: 20px; background: rgba(57, 255, 136, 0.1);
             border: 2px dashed var(--primary); border-radius: 10px;
         }
         #pairing-code {
@@ -126,7 +126,7 @@
         }
 
         .instructions {
-            text-align: left; font-size: 0.75rem; color: #88ccff; margin-top: 20px;
+            text-align: left; font-size: 0.75rem; color: #9cffbd; margin-top: 20px;
             background: rgba(0, 0, 0, 0.3); padding: 15px; border-radius: 5px;
             border-left: 3px solid var(--primary);
         }
@@ -136,7 +136,7 @@
         .loader i { font-size: 3rem; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        .footer { margin-top: 30px; text-align: center; font-size: 0.8rem; color: #5588ff; text-transform: uppercase; }
+        .footer { margin-top: 30px; text-align: center; font-size: 0.8rem; color: #5fdc8d; text-transform: uppercase; }
         .owner { color: var(--primary); font-weight: bold; text-shadow: 0 0 5px var(--primary); }
 
         .notification {
@@ -151,10 +151,10 @@
         .status-dot.error { background: #ff0000; box-shadow: 0 0 5px #ff0000; }
         .users-card {
             margin-top: 24px; padding: 18px; border: 1px solid var(--primary);
-            border-radius: 10px; background: rgba(0, 212, 255, 0.08);
+            border-radius: 10px; background: rgba(57, 255, 136, 0.08);
             box-shadow: 0 0 12px rgba(0, 212, 255, 0.25); text-align: center;
         }
-        .users-label { font-size: 0.75rem; letter-spacing: 2px; color: #88ccff; }
+        .users-label { font-size: 0.75rem; letter-spacing: 2px; color: #9cffbd; }
         .users-count { display: block; margin-top: 8px; font-size: 2rem; font-weight: bold; color: white; text-shadow: var(--text-glow); }
     </style>
 </head>
@@ -168,7 +168,7 @@
 
     <div class="marquee">
         <div class="marquee-content">
-            WELCOME FOR MOMO-XMD • RADI POWERED • SECURE PAIRING • WELCOME FOR MOMO-XMD • DARK WEB ACCESS •
+            WELCOME FOR MOMO-XMD • GREEN DARK WEB • SECURE PAIRING • WELCOME FOR MOMO-XMD • TERMINAL ACCESS •
         </div>
     </div>
 
@@ -192,13 +192,13 @@
             </div>
 
             <div id="qr-section" style="display: none;">
-                <p style="font-size: 0.8rem; margin-bottom: 20px;">GENERATE BLUE TOKEN FOR AUTHENTICATION</p>
+                <p style="font-size: 0.8rem; margin-bottom: 20px;">GENERATE GREEN TOKEN FOR AUTHENTICATION</p>
                 <button id="btn-qr" onclick="getQR()">Generate QR</button>
             </div>
 
             <div class="loader" id="loader">
                 <i class="fas fa-spinner fa-spin" aria-label="Loading"></i>
-                <p id="loader-text">BYPASSING FIREWALLS...</p>
+                <p id="loader-text">INITIALIZING SECURE CHANNEL...</p>
             </div>
 
             <div id="result">
@@ -208,7 +208,7 @@
                         <span id="pairing-code">--------</span>
                         <button class="copy-btn" onclick="copyCode()">Copy Code</button>
                     </div>
-                    <p style="font-size: 0.8rem; color: #88ccff; margin-top: 10px;">OWNER: <span class="owner">MOMO47</span></p>
+                    <p style="font-size: 0.8rem; color: #9cffbd; margin-top: 10px;">OWNER: <span class="owner">MOMO47</span></p>
                     
                     <div class="instructions">
                         <strong>CONNECTION GUIDE:</strong><br>
@@ -327,7 +327,7 @@
             finally { toggleLoading(false); }
         }
 
-        function toggleLoading(on, text = 'BYPASSING FIREWALLS...') {
+        function toggleLoading(on, text = 'INITIALIZING SECURE CHANNEL...') {
             document.getElementById('loader').style.display = on ? 'block' : 'none';
             document.getElementById('loader-text').innerText = text;
             document.getElementById('btn-submit').disabled = on;
